@@ -84,7 +84,7 @@ class DelaunayTriangulation:
     self.__tds._vertices[2].setPoint(p1)
     self.__tds._vertices[3].setPoint(p2)
 
-  def __inConflict(self, p: Point, v0: int, v1: int, v2: int):
+  def __in_conflict(self, p: Point, v0: int, v1: int, v2: int):
     if self.__tds.isInfinite(v0, v1, v2):
       # sort vertices to get (v0, v1, v2 = 0), i.e., infinite at last
       face = [v0,v1,v2]
@@ -123,7 +123,7 @@ class DelaunayTriangulation:
       else:
         return False
 
-  def __findFirst(self, p, hint):
+  def __find_first_conflict(self, p, hint):
     if hint == 0: # infinite vertex, find oposite face, which must be finite
       link = self.__tds._vertices[hint]._links[0]
       hint = self.__tds.findUp(link[1], link[0])
@@ -196,7 +196,7 @@ class DelaunayTriangulation:
 
     return hint
 
-  def __findOthers(self, p, first):
+  def __find_other_conflicts(self, p, first):
     cavity = [first]
     horizon = []
     Q = Queue(maxsize = 0) # do we need an infinite size queue?
@@ -213,8 +213,6 @@ class DelaunayTriangulation:
       for i in range(3):
         v0 = face[(i+1)%3]
         v1 = face[i]
-        #v0 = self.__tds._vertices[]
-        #v1 = self.__tds._vertices[]
         N = self.__tds.findUp(v0, v1) # neighbor face
 
         print("    >>> has neighbor: %d %d %d" % (N[0], N[1], N[2]))
@@ -223,9 +221,9 @@ class DelaunayTriangulation:
         if visited[N[0]] and visited[N[1]] and visited[N[2]]:
           continue
 
-        inConflict = self.__inConflict(p, N[0], N[1], N[2])
+        in_conflict = self.__in_conflict(p, N[0], N[1], N[2])
 
-        if inConflict:
+        if in_conflict:
           print("      >>>> neighbor IN CONFLICT")
           cavity.append(N)
           Q.put(N)
@@ -234,17 +232,16 @@ class DelaunayTriangulation:
           print("      >>>> boundary reached")
 
       # mark vertices as visited
-      #visited[face[:]] = True
       print("BEFORE: ", visited)
       visited[numpy.array(face)] = True
       print("AFTER: ", visited)
     
     return cavity, horizon
 
-  def __find_conflict_set(self, p, hint):
-    first  = self.__findFirst(p, hint)
+  def __find_conflict(self, p, hint):
+    first  = self.__find_first_conflict(p, hint)
     print("    > first conflict", first)
-    cavity, horizon = self.__findOthers(p, first)
+    cavity, horizon = self.__find_other_conflicts(p, first)
     return cavity, horizon
   
   def __remove_conflict(self, conflict):
@@ -274,7 +271,7 @@ class DelaunayTriangulation:
     
     self.__tds._vertices[v0].setPoint(p)
 
-  def __allInfinite(self, faces):
+  def __all_infinite(self, faces):
     n = 0
     for f in faces:
       if self.__tds.isInfinite(f[0], f[1], f[2]):
@@ -297,7 +294,7 @@ class DelaunayTriangulation:
     for p in points[3:]:
       print("  > Inserting point: ", p.coords)
       
-      conflict, cavity = self.__find_conflict_set(p, hint)
+      conflict, cavity = self.__find_conflict(p, hint)
       print("  > conflict set: ", conflict)
       print("  > cavity: ", cavity)
 
@@ -334,7 +331,7 @@ class DelaunayTriangulation:
       plt.draw()
       plt.waitforbuttonpress(0) # this will wait for indefinite time
       
-      conflict, cavity = self.__find_conflict_set(p, hint)
+      conflict, cavity = self.__find_conflict(p, hint)
       print("  > conflict: ", conflict)
       print("  > cavity: ", cavity)
       print("  > updating cavity...")
@@ -347,7 +344,7 @@ class DelaunayTriangulation:
       plt.waitforbuttonpress(0) # this will wait for indefinite time
 
       self.__remove_conflict(conflict)
-      if not self.__allInfinite(conflict):
+      if not self.__all_infinite(conflict):
         plt.clf()
         drawPoint(self.__fig, p)
         self.drawCavity(conflict)
