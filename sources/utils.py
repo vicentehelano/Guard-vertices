@@ -37,14 +37,6 @@ class Point: # here
   def setY(self, y):
     self._y = y
 
-# Temporarily, we only shuffle points
-# We must have a NumPy array to this end.
-def brio(points):
-  assert isinstance(points, numpy.ndarray)
-  P = copy.deepcopy(points)
-  numpy.random.shuffle(P)
-  return P
-
 def determinant(a00, a01, a10, a11):
   return a00*a11 - a10*a01
 

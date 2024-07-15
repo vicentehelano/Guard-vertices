@@ -15,9 +15,11 @@ sns.set_theme(style="darkgrid")
 
 from .utils import Point
 from .utils import SMALLER, EQUAL, LARGER
-from .utils import brio, orientation, inBetween, circumcircle
+from .utils import orientation, inBetween, circumcircle
 
 from .draw import drawPoint, drawSegment, drawTriangle
+
+from .brio import Brio
 
 class DelaunayTriangulation:
   """
@@ -37,7 +39,7 @@ class DelaunayTriangulation:
     plt.close(self.__fig)
 
   # add first three non-collinear points
-  def __bootUp(self, points):
+  def __insert_first_three(self, points):
     self.__tds.addVertex()
     self.__tds.addVertex()
     self.__tds.addVertex()
@@ -239,33 +241,35 @@ class DelaunayTriangulation:
     
     return cavity, horizon
 
-  def __findCavity(self, p, hint):
+  def __find_conflict_set(self, p, hint):
     first  = self.__findFirst(p, hint)
     print("    > first conflict", first)
     cavity, horizon = self.__findOthers(p, first)
     return cavity, horizon
   
-  def __makeCavity(self, cavity):
-    print("  >> updating cavity: BEFORE removed conflicts")
+  def __remove_conflict(self, conflict):
+    print("  >> removing cavity...")
+
+    print("    | BEFORE")
     self.__tds.print()
     # remove faces from cavity
-    for face in cavity:
+    for face in conflict:
       v0 = face[0]
       v1 = face[1]
       v2 = face[2]
       self.__tds.deleteFace(v0, v1, v2)
     
-    print("  >> updating cavity: after removed conflicts")
+    print("    | AFTER ")
     self.__tds.print()
 
-  def __fillCavity(self, p, horizon):
+  def __fill_cavity(self, p, cavity):
     self.__tds.addVertex()
     v0 = len(self.__tds._vertices) - 1
-    print("  >> updating cavity: added vertex %d" % v0)
-    for edge in horizon:
+    print("  >> filling cavity: added vertex %d" % v0)
+    for edge in cavity:
       v1 = edge[0]
       v2 = edge[1]
-      print("  >> updating cavity: adding face %d %d %d" % (v0, v1, v2))
+      print("    | adding face %d %d %d" % (v0, v1, v2))
       self.__tds.addFace(v0, v1, v2)
     
     self.__tds._vertices[v0].setPoint(p)
@@ -278,15 +282,41 @@ class DelaunayTriangulation:
 
     return n == len(faces)
 
-  # Bowyer-Watson-like algoritm con BRIO
-  def addPoints(self, points):
+  # Bowyer-Watson algoritm con BRIO
+  def insert(self, points):
+    assert len(points) >= 3
+
+    brio = Brio()
+    points = brio(points)
+
+    self.__insert_first_three(points)
+    print('BOOT DONE')
+    self.__tds.print()
+
+    hint = 0 # infinite vertex
+    for p in points[3:]:
+      print("  > Inserting point: ", p.coords)
+      
+      conflict, cavity = self.__find_conflict_set(p, hint)
+      print("  > conflict set: ", conflict)
+      print("  > cavity: ", cavity)
+
+      print("  > updating cavity...")
+      self.__remove_conflict(conflict)
+      self.__fill_cavity(p, cavity)
+
+    print('INSERTION DONE')
+    self.__tds.print()
+
+  def debug(self, points):
     assert len(points) >= 3
 
     self.getBounds(points)
     self.enlargeBounds()
 
+    brio = Brio()
     points = brio(points)
-    self.__bootUp(points)
+    self.__insert_first_three(points)
     print('BOOT DONE')
     self.__tds.print()
     self.draw()
@@ -304,31 +334,31 @@ class DelaunayTriangulation:
       plt.draw()
       plt.waitforbuttonpress(0) # this will wait for indefinite time
       
-      cavity, horizon = self.__findCavity(p, hint)
+      conflict, cavity = self.__find_conflict_set(p, hint)
+      print("  > conflict: ", conflict)
       print("  > cavity: ", cavity)
-      print("  > horizon: ", horizon)
       print("  > updating cavity...")
-      self.drawCavity(cavity)
-      self.drawHorizon(horizon)
-      self.drawCircumcircles(cavity)
+      self.drawCavity(conflict)
+      self.drawHorizon(cavity)
+      self.drawCircumcircles(conflict)
       self.__fig.canvas.draw_idle() # needed to redraw figure
       plt.gca().set_aspect('equal')
       plt.draw()
       plt.waitforbuttonpress(0) # this will wait for indefinite time
 
-      self.__makeCavity(cavity)
-      if not self.__allInfinite(cavity):
+      self.__remove_conflict(conflict)
+      if not self.__allInfinite(conflict):
         plt.clf()
         drawPoint(self.__fig, p)
-        self.drawCavity(cavity)
-        self.drawHorizon(horizon)
+        self.drawCavity(conflict)
+        self.drawHorizon(cavity)
         self.draw()
         self.__fig.canvas.draw_idle() # needed to redraw figure
         plt.gca().set_aspect('equal')
         plt.draw()
         plt.waitforbuttonpress(0) # this will wait for indefinite time
 
-      self.__fillCavity(p, horizon)
+      self.__fill_cavity(p, cavity)
       print("AFTER CAVITY UPDATE:")
 
       plt.clf()

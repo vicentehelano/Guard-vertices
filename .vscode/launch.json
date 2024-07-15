@@ -5,13 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Depurador da DelaunayTriangulation",
+            "name": "Example: DelaunayTriangulation",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "examples.example_DelaunayTriangulation"
+        },
+        {
+            "name": "Test: DelaunayTriangulation",
             "type": "debugpy",
             "request": "launch",
             "module": "tests.test_DelaunayTriangulation",
         },
         {
-            "name": "Depurador da StarVertices",
+            "name": "Test: StarVertices",
             "type": "debugpy",
             "request": "launch",
             "module": "tests.test_StarVertices"
