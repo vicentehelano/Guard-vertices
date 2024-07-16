@@ -161,6 +161,11 @@ class StarVertices:
     else: # error
       return None
     
+  # TODO
+  # Source: Cheng, Dey, Shewchuck (2013), Section 3.8
+  def remove_vertex(v):
+    pass
+    
   def is_infinite(self, v0, v1 = None, v2 = None):
     if v2 is None:
       if v1 is None:
