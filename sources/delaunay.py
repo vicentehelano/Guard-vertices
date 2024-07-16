@@ -197,8 +197,8 @@ class DelaunayTriangulation:
     return hint
 
   def __find_other_conflicts(self, p, first):
-    cavity = [first]
-    horizon = []
+    conflict = [first]
+    cavity = []
     Q = Queue(maxsize = 0) # do we need an infinite size queue?
     Q.put(first)
 
@@ -225,10 +225,10 @@ class DelaunayTriangulation:
 
         if in_conflict:
           print("      >>>> neighbor IN CONFLICT")
-          cavity.append(N)
+          conflict.append(N)
           Q.put(N)
         else: # we've reached the boundary of the cavity
-          horizon.append([v1, v0])
+          cavity.append([v1, v0])
           print("      >>>> boundary reached")
 
       # mark vertices as visited
@@ -236,13 +236,13 @@ class DelaunayTriangulation:
       visited[numpy.array(face)] = True
       print("AFTER: ", visited)
     
-    return cavity, horizon
+    return conflict, cavity
 
   def __find_conflict(self, p, hint):
     first  = self.__find_first_conflict(p, hint)
     print("    > first conflict", first)
-    cavity, horizon = self.__find_other_conflicts(p, first)
-    return cavity, horizon
+    conflict, cavity = self.__find_other_conflicts(p, first)
+    return conflict, cavity
   
   def __remove_conflict(self, conflict):
     print("  >> removing cavity...")
@@ -335,9 +335,9 @@ class DelaunayTriangulation:
       print("  > conflict: ", conflict)
       print("  > cavity: ", cavity)
       print("  > updating cavity...")
-      self.drawCavity(conflict)
-      self.drawHorizon(cavity)
-      self.drawCircumcircles(conflict)
+      self.draw_conflict(conflict)
+      self.draw_cavity(cavity)
+      self.draw_circumcircles(conflict)
       self.__fig.canvas.draw_idle() # needed to redraw figure
       plt.gca().set_aspect('equal')
       plt.draw()
@@ -347,8 +347,8 @@ class DelaunayTriangulation:
       if not self.__all_infinite(conflict):
         plt.clf()
         drawPoint(self.__fig, p)
-        self.drawCavity(conflict)
-        self.drawHorizon(cavity)
+        self.draw_conflict(conflict)
+        self.draw_cavity(cavity)
         self.draw()
         self.__fig.canvas.draw_idle() # needed to redraw figure
         plt.gca().set_aspect('equal')
@@ -402,13 +402,13 @@ class DelaunayTriangulation:
 
     self.setBounds(Point(xmin, ymin), Point(xmax, ymax))
 
-  def drawLabels(self):
+  def draw_labels(self):
     plt.figure(self.__fig)
     for i, v in enumerate(self.__tds._vertices):
       p = v.point
       plt.annotate(r"$v_{0}$".format(i), xy=p.coords)
 
-  def drawCavity(self, cavity):
+  def draw_conflict(self, cavity):
     plt.figure(self.__fig)
     plt.xlim(self.__min.x, self.__max.x)
     plt.ylim(self.__min.y, self.__max.y)
@@ -423,13 +423,13 @@ class DelaunayTriangulation:
         v2 = self.__tds._vertices[iv2]
         drawTriangle(self.__fig, v0.point, v1.point, v2.point, filled=True)
 
-  def drawCircumcircles(self, cavity):
+  def draw_circumcircles(self, faces):
     plt.figure(self.__fig)
     plt.xlim(self.__min.x, self.__max.x)
     plt.ylim(self.__min.y, self.__max.y)
 
     patches = []
-    for face in cavity:
+    for face in faces:
       iv0 = face[0]
       iv1 = face[1]
       iv2 = face[2]
@@ -447,12 +447,12 @@ class DelaunayTriangulation:
     ax = plt.gca()
     ax.add_collection(collection)
 
-  def drawHorizon(self, horizon):
+  def draw_cavity(self, cavity):
     plt.figure(self.__fig)
     plt.xlim(self.__min.x, self.__max.x)
     plt.ylim(self.__min.y, self.__max.y)
 
-    for edge in horizon:
+    for edge in cavity:
       iv0 = edge[0]
       iv1 = edge[1]
       if not self.__tds.isInfinite(iv0, iv1):
@@ -476,4 +476,4 @@ class DelaunayTriangulation:
             v1 = self.__tds._vertices[iv1]
             v2 = self.__tds._vertices[iv2]
             drawTriangle(self.__fig, v0.point, v1.point, v2.point, filled=False)
-    self.drawLabels()
+    self.draw_labels()
