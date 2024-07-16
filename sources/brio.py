@@ -6,8 +6,6 @@ import numpy
 import copy
 from enum import Enum
 
-from .utils import Point
-
 # Sorting methods
 class SortingMethod(Enum):
   NONE    = 0

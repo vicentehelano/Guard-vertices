@@ -11,15 +11,19 @@ from .utils import Point
 
 class Vertex: # here
   def __init__(self, point=None):
-    self._links = []
-    self._point = point
+    self.__links = []
+    self.__point = point
 
-  def setPoint(self, point):
-    self._point = point
+  def set_point(self, point):
+    self.__point = point
+
+  @property
+  def links(self):
+    return self.__links
 
   @property
   def point(self):
-    return self._point
+    return self.__point
 
 class StarVertices:
   """
@@ -27,13 +31,16 @@ class StarVertices:
   complex data structure.
   """
   def __init__(self):
-    self._vertices = []
-    self.addVertex( Vertex( Point(numpy.inf,numpy.inf) ) ) # infinite vertex, index 0
+    self.__vertices = []
+    self.create_vertex() # infinite vertex, index 0
+    self.__vertices[0].set_point( Point(numpy.inf,numpy.inf) )
 
-  def addVertex(self, v=None):
-    if v is None:
-      v = Vertex()
-    self._vertices.append(v)
+  @property
+  def vertices(self):
+    return self.__vertices
+
+  def create_vertex(self):
+    self.__vertices.append(Vertex())
 
   # A triangle t can be added by finding the representative
   # vertices of t and extending each of their link sets.
@@ -45,9 +52,9 @@ class StarVertices:
   #         separate paths;
   #    (iv) join a path into a cycle, if the two vertices are the
   #         ends of the same path.
-  def __addFace(self, v0, v1, v2):
+  def __insert_face(self, v0, v1, v2):
     i1 = i2 = p1 = p2 = None
-    links = self._vertices[v0]._links
+    links = self.__vertices[v0].links
     print("      | adding face to vertex %d" % v0)
     print("      |                link before: ", links)
     # get the path of each neighbor, and its respective index
@@ -82,18 +89,18 @@ class StarVertices:
         links[p1].append(v2)
     print("      |                link after: ", links)
 
-  def addFace(self, v0, v1, v2):
-    self.__addFace(v0, v1, v2)
-    self.__addFace(v1, v2, v0)
-    self.__addFace(v2, v0, v1)
+  def insert_face(self, v0, v1, v2):
+    self.__insert_face(v0, v1, v2)
+    self.__insert_face(v1, v2, v0)
+    self.__insert_face(v2, v0, v1)
 
   # A triange t can be deleted by finding the representative
   # vertices of t and splitting a cycle or a path of each of
   # their links.
-  def __deleteFace(self, v0, v1, v2):
+  def __remove_face(self, v0, v1, v2):
     #i1 = None
     i2 = p1 = p2 = None
-    links = self._vertices[v0]._links
+    links = self.__vertices[v0].links
     for index, path in enumerate(links):
       if v1 in path:
         #i1 = path.index(v1)
@@ -127,25 +134,25 @@ class StarVertices:
       if len(latest) > 1:
         links.insert(p1+1,latest)
 
-  def deleteFace(self, v0, v1, v2):
-    self.__deleteFace(v0, v1, v2)
-    self.__deleteFace(v1, v2, v0)
-    self.__deleteFace(v2, v0, v1)
+  def remove_face(self, v0, v1, v2):
+    self.__remove_face(v0, v1, v2)
+    self.__remove_face(v1, v2, v0)
+    self.__remove_face(v2, v0, v1)
 
-  # findUp sempre retorna o triângulo que contém
+  # find_up sempre retorna o triângulo que contém
   # o simplexo dado.
-  def findUp(self, v0, v1=None):
+  def find_up(self, v0, v1=None):
     if v0 is not None:
       if v1 is not None: # return oriented face (v0,v1,v2)
         i1 = p1 = None
-        links = self._vertices[v0]._links
+        links = self.__vertices[v0].links
         # get the path and index of v1
         for index, path in enumerate(links):
           if v1 in path:
             i1 = path.index(v1)
             p1 = index
 
-        link = self._vertices[v0]._links[p1]
+        link = self.__vertices[v0].links[p1]
         last = len(link) - 1
         if i1 == last: # open link, because 'index()' always return first occurrence
           return None  # so, there is no 'v2' such that (v0,v1,v2) is a face
@@ -157,7 +164,7 @@ class StarVertices:
     else: # error
       return None
     
-  def isInfinite(self, v0, v1 = None, v2 = None):
+  def is_infinite(self, v0, v1 = None, v2 = None):
     if v2 is None:
       if v1 is None:
         return v0 == 0
@@ -166,7 +173,7 @@ class StarVertices:
     else:
       return  (v0 == 0) or (v1 == 0) or (v2 == 0)
 
-  def print(self):      
+  def print(self):
     print('> links:')
-    for i in range(len(self._vertices)):
-      print(self._vertices[i]._links)
+    for i in range(len(self.__vertices)):
+      print(self.__vertices[i].links)
