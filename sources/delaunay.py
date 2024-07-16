@@ -7,18 +7,11 @@ import copy
 import random as rd
 from queue import Queue
 
-import matplotlib.pyplot as plt
-from matplotlib.collections import PatchCollection
-from matplotlib.patches import Circle
-import seaborn as sns
-sns.set_theme(style="darkgrid")
-
-from .utils import Point
+# Local imports
+from .utils import Point, Circle, BoundingBox
+from .utils import orientation, in_between, circumcircle
 from .utils import SMALLER, EQUAL, LARGER
-from .utils import orientation, inBetween, circumcircle, BoundingBox
-
 from .canvas import Canvas
-
 from .brio import Brio
 
 class DelaunayTriangulation:
@@ -28,7 +21,6 @@ class DelaunayTriangulation:
   """
   def __init__(self, tds):
     self.__tds = tds()
-    #if canvas is not None:
     self.__bbox = BoundingBox()
     self.__canvas = None
 
@@ -98,7 +90,7 @@ class DelaunayTriangulation:
         return True
 
       if orient == 0:  # in this case, only inside edge implies conflict
-        return inBetween(p0, p1, p)
+        return in_between(p0, p1, p)
 
     else: # in case of finite face, proceed as always
       # compute incircle test
@@ -368,7 +360,8 @@ class DelaunayTriangulation:
   def draw_labels(self):
     for i, v in enumerate(self.__tds._vertices):
       p = v.point
-      plt.annotate(r"$v_{0}$".format(i), xy=p.coords)
+      label = r"$v_{0}$".format(i)
+      self.__canvas.draw_label(label, p)
 
   def draw_conflict(self, cavity):
     for face in cavity:
@@ -382,7 +375,7 @@ class DelaunayTriangulation:
         self.__canvas.draw_triangle(v0.point, v1.point, v2.point, filled=True)
 
   def draw_circumcircles(self, faces):
-    patches = []
+    circles = []
     for face in faces:
       iv0 = face[0]
       iv1 = face[1]
@@ -394,12 +387,9 @@ class DelaunayTriangulation:
 
         c,r = circumcircle(v0.point, v1.point, v2.point)
         print("Circumcircle: c = (%f, %f), r = %f" % (c.x, c.y, r))
-        circle = Circle(c.coords, radius=r)
-        patches.append(circle)
+        circles.append(Circle(c, r))
 
-    collection = PatchCollection(patches, edgecolor='magenta', facecolor='none', linewidth=2)
-    ax = plt.gca()
-    ax.add_collection(collection)
+    self.__canvas.draw_circle(circles)
 
   def draw_cavity(self, cavity):
     for edge in cavity:

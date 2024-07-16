@@ -34,6 +34,19 @@ class Canvas:
 
   def clear(self):
     plt.clf()
+
+  def draw_circle(self, circles):
+    patches = []
+    for c in circles:
+      circle = Circle(c.center.coords, radius=c.radius)
+      patches.append(circle)
+
+    collection = PatchCollection(patches, edgecolor='magenta', facecolor='none', linewidth=2)
+    ax = plt.gca()
+    ax.add_collection(collection)
+
+  def draw_label(self, label, p):
+    plt.annotate(label, xy=p.coords)
   
   def draw_point(self, p):
     plt.plot(p.x, p.y, 'ro', linewidth=3)
