@@ -16,26 +16,85 @@ LARGER  = +1
 
 class Point: # here
   def __init__(self, x, y):
-    self._x = x
-    self._y = y
+    self.__x = x
+    self.__y = y
 
   @property
   def x(self):
-    return self._x
+    return self.__x
 
   @property
   def y(self):
-    return self._y
+    return self.__y
 
   @property
   def coords(self):
-    return (self._x, self._y)
+    return (self.__x, self.__y)
+  
+  def set_coords(self, x, y):
+    self.__x = x
+    self.__y = y
 
-  def setX(self, x):
-    self._x = x
+  def set_x(self, x):
+    self.__x = x
 
-  def setY(self, y):
-    self._y = y
+  def set_y(self, y):
+    self.__y = y
+
+class BoundingBox:
+  def __init__(self):
+    self.__min = Point( numpy.inf,  numpy.inf)
+    self.__max = Point(-numpy.inf, -numpy.inf)
+
+  def reshape(self, points):
+    xmin = self.__min.x
+    ymin = self.__min.y
+    xmax = self.__max.x
+    ymax = self.__max.y
+    for p in points:
+      xmin = min(p.x, xmin)
+      ymin = min(p.y, ymin)
+
+      xmax = max(p.x, xmax)
+      ymax = max(p.y, ymax)
+
+    self.__min = Point(xmin, ymin)
+    self.__max = Point(xmax, ymax)
+
+    print("    > Bounding box corners: ")
+    print("      | x_min: ", xmin)
+    print("      | y_min: ", ymin)
+    print("      | x_max: ", xmax)
+    print("      | y_max: ", ymax)
+
+  def scale(self, scale):
+    xmin = self.__min.x
+    ymin = self.__min.y
+    xmax = self.__max.x
+    ymax = self.__max.y
+
+    dx = xmax - xmin
+    dy = ymax - ymin
+
+    cx = xmin + dx/2
+    cy = ymin + dy/2
+
+    xmin = scale*(xmin - cx) + cx
+    ymin = scale*(ymin - cy) + cy
+    xmax = scale*(xmax - cx) + cx
+    ymax = scale*(ymax - cy) + cy
+
+    self.__min = Point(xmin, ymin)
+    self.__max = Point(xmax, ymax)
+
+  @property
+  def min(self):
+    return self.__min
+  
+  @property
+  def max(self):
+    return self.__max
+      
 
 def determinant(a00, a01, a10, a11):
   return a00*a11 - a10*a01

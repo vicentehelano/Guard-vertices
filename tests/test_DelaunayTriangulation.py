@@ -29,14 +29,8 @@ def testDelaunayTriangulation():
   Dt = DelaunayTriangulation(StarVertices)
   points = exampleBlandford()
   Dt.insert(points)
-  Dt.getBounds(points)
-  Dt.enlargeBounds()
   Dt.draw()
-  #Dt.__fig.canvas.draw_idle() # needed to redraw figure
-  plt.gca().set_aspect('equal')
-  plt.gcf().canvas.draw_idle()
-  plt.draw()
-  plt.waitforbuttonpress(0) # this will wait for indefinite time
+  
 
 if __name__ == '__main__':
   testDelaunayTriangulation()

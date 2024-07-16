@@ -28,7 +28,7 @@ def exampleBlandford():
 def exampleDelaunayTriangulation():
   Dt = DelaunayTriangulation(StarVertices)
   points = exampleBlandford()
-  Dt.debug(points)
+  Dt.visual_insert(points)
 
 if __name__ == '__main__':
   exampleDelaunayTriangulation()
