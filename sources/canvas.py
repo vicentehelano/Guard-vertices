@@ -32,6 +32,9 @@ class Canvas:
   def clear(self):
     plt.clf()
 
+  def close(self):
+    plt.close()
+
   def draw_circle(self, circles):
     patches = []
     for c in circles:
