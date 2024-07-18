@@ -17,6 +17,12 @@
             "module": "tests.test_DelaunayTriangulation",
         },
         {
+            "name": "Test: Generator",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "tests.test_Generator"
+        },
+        {
             "name": "Example: DelaunayTriangulation",
             "type": "debugpy",
             "request": "launch",
