@@ -109,13 +109,11 @@ class DelaunayTriangulation:
         return False
 
   def __find_first_conflict(self, p, hint):
-    if hint == 0: # infinite vertex, find oposite face, which must be finite
-      link = self.__tds.vertices[hint].links[0]
-      hint = self.__tds.find_up(link[1], link[0])
+    if 0 in hint: # infinite face, find oposite face, which must be finite
+      i = hint.index(0)
+      #link = self.__tds.vertices[hint].links[0]
+      hint = self.__tds.find_up(hint[(i-1)%3], hint[(i+1)%3])
 
-    print("NEW HINT: ", hint)
-
-    status = None
     found = False
     print("  >>> findFirst:")
     while not found:
@@ -178,6 +176,8 @@ class DelaunayTriangulation:
 
       if hint[2] == 0: # p is outside the convex hull
         break
+      else: # could not be an infinite face
+        assert 0 not in hint
 
     return hint
 
@@ -275,7 +275,7 @@ class DelaunayTriangulation:
     print('BOOT DONE')
     self.__tds.print()
 
-    hint = 0 # infinite vertex
+    hint = [1, 2, 3] # first finite face
     for p in points[3:]:
       print("  > Inserting point: ", p.coords)
       
@@ -286,6 +286,13 @@ class DelaunayTriangulation:
       print("  > updating cavity...")
       self.__remove_conflict(conflict)
       self.__fill_cavity(p, cavity)
+
+      print("new hint:")
+      i = len(self.__tds.vertices) - 1
+      link = self.__tds.vertices[i].links[0]
+      hint[0] = i
+      hint[1] = link[0]
+      hint[2] = link[1]
 
     print('INSERTION DONE')
 
@@ -317,7 +324,7 @@ class DelaunayTriangulation:
     print("DESENHO: TRIANGULACAO")
     self.__canvas.end()
 
-    hint = 0 # infinite vertex
+    hint = [1, 2, 3] # first face
     for p in points[3:]:
       print("  > Inserindo ponto: ", p.coords)
       self.__canvas.begin()
@@ -347,6 +354,13 @@ class DelaunayTriangulation:
 
       self.__fill_cavity(p, cavity)
       print("AFTER CAVITY UPDATE:")
+
+      print("new hint:")
+      i = len(self.__tds.vertices) - 1
+      link = self.__tds.vertices[i].links[0]
+      hint[0] = i
+      hint[1] = link[0]
+      hint[2] = link[1]
 
       self.__canvas.clear()
       self.__canvas.begin()

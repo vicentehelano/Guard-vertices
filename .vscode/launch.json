@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Example: DelaunayTriangulation",
+            "name": "Test: StarVertices",
             "type": "debugpy",
             "request": "launch",
-            "module": "examples.example_DelaunayTriangulation"
+            "module": "tests.test_StarVertices"
         },
         {
             "name": "Test: DelaunayTriangulation",
@@ -17,10 +17,10 @@
             "module": "tests.test_DelaunayTriangulation",
         },
         {
-            "name": "Test: StarVertices",
+            "name": "Example: DelaunayTriangulation",
             "type": "debugpy",
             "request": "launch",
-            "module": "tests.test_StarVertices"
+            "module": "examples.example_DelaunayTriangulation"
         }
     ]
 }
