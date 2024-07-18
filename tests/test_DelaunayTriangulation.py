@@ -7,8 +7,6 @@ Tips:
 """
 import numpy
 
-import matplotlib.pyplot as plt
-
 from sources.utils import Point
 from sources.stars import StarVertices
 from sources.delaunay import DelaunayTriangulation
