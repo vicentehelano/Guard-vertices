@@ -14,7 +14,7 @@
             "name": "Test: DelaunayTriangulation",
             "type": "debugpy",
             "request": "launch",
-            "module": "tests.test_DelaunayTriangulation",
+            "module": "tests.test_DelaunayTriangulation"
         },
         {
             "name": "Test: Generator",

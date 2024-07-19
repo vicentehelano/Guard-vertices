@@ -1,4 +1,4 @@
-# Guarded-vertices
+# Guard-vertices
 *A guard-based data structure for triangulations*
 
 This repository is under development.
