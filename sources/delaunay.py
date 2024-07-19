@@ -15,254 +15,79 @@ from .brio import Brio
 
 class DelaunayTriangulation:
   """
-  This is an object oriented implementation of Boywer-Watson
-  algorithm coupled with BRIO to avoid a spatial data structure.
+  The Delaunay triangulation of a set of points in 2d.
+
+  This is an object oriented implementation of the Boywer-Watson
+  algorithm con BRIO for triangulating point sets on the euclidean plane.
+  It follows mainly the CGAL's Triangulation_3 design.
+
+  Parameters
+  ----------
+  tds : class
+        A triangulation data structure with at least the following methods:
+          - vertex(i): 
+          - create_vertex(): 
+          - insert_face(int, int, int):
+          - find_up(int, int):
+          - remove_face(int, int, int):
+          - is_infinite(int, int, int):
+
+  Examples
+  --------
+  >>> t = DelaunayTriangulation(StartVertices)
+  >>> t.insert(Point(0.0, 0.0))
+  >>> t.insert(Point(1.0, 0.0))
+  >>> t.insert(Point(0.0, 1.0))
+  >>> t.insert(Point(1.0, 0.0))
+  >>> t.draw()
+
+  References
+  ----------
   """
   def __init__(self, tds):
     self.__tds = tds()
     self.__bbox = BoundingBox()
     self.__canvas = None
 
-  # add first three non-collinear points
-  def __insert_first_three(self, points):
-    self.__tds.create_vertex()
-    self.__tds.create_vertex()
-    self.__tds.create_vertex()
+  # ACCESS methods
 
-    p0 = points[0]
-    p1 = points[1]
-    # find p3 such that (p1,p2,p3) has positive orientation
-    i = 2
-    found = False
-    while i < points.size:
-      p2 = points[i]
-      if orientation(p0, p1, p2) > 0:
-        found = True
-        break
-      i = i + 1
-
-    if not found:
-      p0 = points[1]
-      p1 = points[0]
-      # find p3 such that (p1,p2,p3) has positive orientation
-      i = 2
-      while i < points.size:
-        p2 = points[i]
-        if orientation(p0, p1, p2) > 0:
-          found = True
-          break
-        i = i + 1
-
-    assert found == True
-
-    if i != 2: # the third point is not at the third position, so fix it
-      points[2], points[i] = points[i], points[2]
-
-    # add faces (finite and infinite)
-    self.__tds.insert_face(1,2,3)
-    self.__tds.insert_face(0,2,1)
-    self.__tds.insert_face(0,3,2)
-    self.__tds.insert_face(0,1,3)
-
-    # set points
-    self.__tds.vertices[1].set_point(p0)
-    self.__tds.vertices[2].set_point(p1)
-    self.__tds.vertices[3].set_point(p2)
-
-  def __in_conflict(self, p: Point, v0: int, v1: int, v2: int):
-    if self.__tds.is_infinite(v0, v1, v2):
-      # sort vertices to get (v0, v1, v2 = 0), i.e., infinite at last
-      face = [v0,v1,v2]
-      i  = face.index(0)
-      v0 = face[(i+1)%3]
-      v1 = face[(i+2)%3]
-
-      v0 = self.__tds.vertices[v0]
-      v1 = self.__tds.vertices[v1]
-
-      p0 = v0.point
-      p1 = v1.point
-      
-      orient = orientation(p0, p1, p)
-
-      if orient > 0: # p is outside convex hull
-        return True
-
-      if orient == 0:  # in this case, only inside edge implies conflict
-        return in_between(p0, p1, p)
-
-    else: # in case of finite face, proceed as always
-      # compute incircle test
-      v0 = self.__tds.vertices[v0]
-      v1 = self.__tds.vertices[v1]
-      v2 = self.__tds.vertices[v2]
-      
-      p0 = v0.point
-      p1 = v1.point
-      p2 = v2.point
-
-      orient = orientation(p0, p1, p2, p)
-
-      if orient >= 0:
-        return True
-      else:
-        return False
-
-  def __find_first_conflict(self, p, hint):
-    if 0 in hint: # infinite face, find oposite face, which must be finite
-      i = hint.index(0)
-      #link = self.__tds.vertices[hint].links[0]
-      hint = self.__tds.find_up(hint[(i-1)%3], hint[(i+1)%3])
-
-    found = False
-    print("  >>> findFirst:")
-    while not found:
-      print("  analyzing face (%d,%d,%d)" % (hint[0], hint[1], hint[2]))
-      v0 = self.__tds.vertices[hint[0]]
-      v1 = self.__tds.vertices[hint[1]]
-      v2 = self.__tds.vertices[hint[2]]
-      
-      p0 = v0.point
-      p1 = v1.point
-      p2 = v2.point
-      print("    > p0: ", p0.coords)
-      print("    > p1: ", p1.coords)
-      print("    > p2: ", p2.coords)
-
-      print("    Computing first predicate")
-      e0 = orientation(p0, p1, p) + 1
-      print("    Computing second predicate")
-      e1 = orientation(p1, p2, p) + 1
-      print("    Computing third predicate")
-      e2 = orientation(p2, p0, p) + 1
-
-      mask = int(e2*9 + e1*3 + e0)
-      
-      if mask in [11, 20, 19]: # walk to v0 opposite vertex
-        hint = self.__tds.find_up(hint[2], hint[1])
-      elif mask in [5, 7, 8]: # walk to v1 opposite vertex
-        hint = self.__tds.find_up(hint[0], hint[2])
-      elif mask in [15, 21, 24]: # walk to v2 opposite vertex
-        hint = self.__tds.find_up(hint[1], hint[2])
-      elif mask == 2: # walk to v0 or v1 opposite vertex
-        edge = random.choice([[hint[2],hint[1]],[hint[0],hint[2]]])
-        hint = self.__tds.find_up(edge[0], edge[1])
-      elif mask == 6: # walk to v1 or v2 opposite vertex
-        edge = random.choice([[hint[0],hint[2]],[hint[1],hint[0]]])
-        hint = self.__tds.find_up(edge[0], edge[1])
-      elif mask == 18: # walk to v2 or v0 opposite vertex
-        edge = random.choice([[hint[1],hint[0]],[hint[2],hint[1]]])
-        hint = self.__tds.find_up(edge[0], edge[1])
-      elif mask == 16: # found at vertex v0
-        found = True
-      elif mask == 22: # found at vertex v1
-        hint = [hint[1],hint[2],hint[0]]
-        found = True
-      elif mask == 14: # found at vertex v2
-        hint = [hint[2],hint[0],hint[1]]
-        found = True
-      elif mask == 25: # found at edge (v0,v1)
-        found = True
-      elif mask == 23: # found at edge (v1,v2)
-        hint = [hint[1],hint[2],hint[0]]
-        found = True
-      elif mask == 17: # found at edge (v2,v0)
-        hint = [hint[2],hint[0],hint[1]]
-        found = True
-      elif mask == 26: # found inside face (v0,v1,v2)
-        found = True
-      else: # 0 | 1 | 3 | 4 | 9 | 10 | 12 | 13: # undefined
-        return None
-
-      if hint[2] == 0: # p is outside the convex hull
-        break
-      else: # could not be an infinite face
-        assert 0 not in hint
-
-    return hint
-
-  def __find_other_conflicts(self, p, first):
-    conflict = [first]
-    cavity = []
-    Q = Queue(maxsize = 0) # do we need an infinite size queue?
-    Q.put(first)
-
-    print("VERTICES SIZE: ", len(self.__tds.vertices))
-
-    visited = numpy.full(len(self.__tds.vertices), False)
-    
-    while not Q.empty():
-      face = Q.get()
-      print("  >> popped face: %d %d %d" % (face[0], face[1], face[2]))
-      # check each neighbor face for conflict
-      for i in range(3):
-        v0 = face[(i+1)%3]
-        v1 = face[i]
-        N = self.__tds.find_up(v0, v1) # neighbor face
-
-        print("    >>> has neighbor: %d %d %d" % (N[0], N[1], N[2]))
-
-        # if visited, skip
-        if visited[N[0]] and visited[N[1]] and visited[N[2]]:
-          continue
-
-        in_conflict = self.__in_conflict(p, N[0], N[1], N[2])
-
-        if in_conflict:
-          print("      >>>> neighbor IN CONFLICT")
-          conflict.append(N)
-          Q.put(N)
-        else: # we've reached the boundary of the cavity
-          cavity.append([v1, v0])
-          print("      >>>> boundary reached")
-
-      # mark vertices as visited
-      print("BEFORE: ", visited)
-      visited[numpy.array(face)] = True
-      print("AFTER: ", visited)
-    
-    return conflict, cavity
-
-  def __find_conflict(self, p, hint):
-    first  = self.__find_first_conflict(p, hint)
-    print("    > first conflict", first)
-    conflict, cavity = self.__find_other_conflicts(p, first)
-    return conflict, cavity
+  def vertex(self, i):
+    return self.__tds.vertex(i)
   
-  def __remove_conflict(self, conflict):
-    print("  >> removing cavity...")
+  @property
+  def vertices(self):
+    return self.__tds.vertices
+  
+  @property
+  def number_of_vertices(self): # number of vertices, including the infinite one
+    return self.__tds.number_of_vertices
+  
+  def __find_up(self, v0, v1):
+    return self.__tds.find_up(v0, v1)
 
-    print("    | BEFORE")
-    self.__tds.print()
-    # remove faces from cavity
-    for face in conflict:
-      v0 = face[0]
-      v1 = face[1]
-      v2 = face[2]
-      self.__tds.remove_face(v0, v1, v2)
-    
-    print("    | AFTER ")
-    self.__tds.print()
+  # PREDICATE methods
 
-  def __fill_cavity(self, p, cavity):
-    self.__tds.create_vertex()
-    v0 = len(self.__tds.vertices) - 1
-    print("  >> filling cavity: added vertex %d" % v0)
-    for edge in cavity:
-      v1 = edge[0]
-      v2 = edge[1]
-      print("    | adding face %d %d %d" % (v0, v1, v2))
-      self.__tds.insert_face(v0, v1, v2)
-    
-    self.__tds.vertices[v0].set_point(p)
+  def __is_infinite(self, v0, v1 = None, v2 = None):
+    return self.__tds.is_infinite(v0, v1, v2)
 
   def __all_infinite(self, faces):
     n = 0
     for f in faces:
-      if self.__tds.is_infinite(f[0], f[1], f[2]):
+      if self.__is_infinite(f[0], f[1], f[2]):
         n = n + 1
 
     return n == len(faces)
+
+  # UPDATE methods
+
+  def __create_vertex(self):
+    self.__tds.create_vertex()
+
+  def __insert_face(self, v0, v1, v2):
+    self.__tds.insert_face(v0, v1, v2)
+
+  def __remove_face(self, v0, v1, v2):
+    self.__tds.remove_face(v0, v1, v2)
 
   # Bowyer-Watson algoritm con BRIO
   def insert(self, points):
@@ -273,7 +98,7 @@ class DelaunayTriangulation:
 
     self.__insert_first_three(points)
     print('BOOT DONE')
-    self.__tds.print()
+    self.print()
 
     hint = [1, 2, 3] # first finite face
     for p in points[3:]:
@@ -288,8 +113,8 @@ class DelaunayTriangulation:
       self.__fill_cavity(p, cavity)
 
       print("new hint:")
-      i = len(self.__tds.vertices) - 1
-      link = self.__tds.vertices[i].links[0]
+      i = self.number_of_vertices - 1
+      link = self.vertex(i).links[0]
       hint[0] = i
       hint[1] = link[0]
       hint[2] = link[1]
@@ -317,7 +142,7 @@ class DelaunayTriangulation:
 
     self.__insert_first_three(points)
     print('BOOT DONE')
-    self.__tds.print()
+    self.print()
 
     self.__canvas.begin()
     self.__draw()
@@ -356,8 +181,8 @@ class DelaunayTriangulation:
       print("AFTER CAVITY UPDATE:")
 
       print("new hint:")
-      i = len(self.__tds.vertices) - 1
-      link = self.__tds.vertices[i].links[0]
+      i = self.number_of_vertices - 1
+      link = self.vertex(i).links[0]
       hint[0] = i
       hint[1] = link[0]
       hint[2] = link[1]
@@ -368,10 +193,250 @@ class DelaunayTriangulation:
       self.__canvas.end()
 
     print('INSERTION DONE')
+    self.print()
+
+  # BOWYER-WATSON internal methods
+  
+  def __insert_first_three(self, points):
+    """Add first three non-collinear points.
+    """
+    self.__create_vertex()
+    self.__create_vertex()
+    self.__create_vertex()
+
+    p0 = points[0]
+    p1 = points[1]
+    # find p3 such that (p1,p2,p3) has positive orientation
+    i = 2
+    found = False
+    while i < points.size:
+      p2 = points[i]
+      if orientation(p0, p1, p2) > 0:
+        found = True
+        break
+      i = i + 1
+
+    if not found:
+      p0 = points[1]
+      p1 = points[0]
+      # find p3 such that (p1,p2,p3) has positive orientation
+      i = 2
+      while i < points.size:
+        p2 = points[i]
+        if orientation(p0, p1, p2) > 0:
+          found = True
+          break
+        i = i + 1
+
+    assert found == True
+
+    if i != 2: # the third point is not at the third position, so fix it
+      points[2], points[i] = points[i], points[2]
+
+    # add faces (finite and infinite)
+    self.__insert_face(1,2,3)
+    self.__insert_face(0,2,1)
+    self.__insert_face(0,3,2)
+    self.__insert_face(0,1,3)
+
+    # set points
+    self.vertex(1).set_point(p0)
+    self.vertex(2).set_point(p1)
+    self.vertex(3).set_point(p2)
+
+  def __find_conflict(self, p, hint):
+    first  = self.__find_first_conflict(p, hint)
+    print("    > first conflict", first)
+    conflict, cavity = self.__find_other_conflicts(p, first)
+    return conflict, cavity
+
+  def __in_conflict(self, p: Point, v0: int, v1: int, v2: int):
+    if self.__is_infinite(v0, v1, v2):
+      # sort vertices to get (v0, v1, v2 = 0), i.e., infinite at last
+      face = [v0,v1,v2]
+      i  = face.index(0)
+      v0 = face[(i+1)%3]
+      v1 = face[(i+2)%3]
+
+      v0 = self.vertex(v0)
+      v1 = self.vertex(v1)
+
+      p0 = v0.point
+      p1 = v1.point
+      
+      orient = orientation(p0, p1, p)
+
+      if orient > 0: # p is outside convex hull
+        return True
+
+      if orient == 0:  # in this case, only inside edge implies conflict
+        return in_between(p0, p1, p)
+
+    else: # in case of finite face, proceed as always
+      # compute incircle test
+      v0 = self.vertex(v0)
+      v1 = self.vertex(v1)
+      v2 = self.vertex(v2)
+      
+      p0 = v0.point
+      p1 = v1.point
+      p2 = v2.point
+
+      orient = orientation(p0, p1, p2, p)
+
+      if orient >= 0:
+        return True
+      else:
+        return False
+
+  def __find_first_conflict(self, p, hint):
+    if 0 in hint: # infinite face, find oposite face, which must be finite
+      i = hint.index(0)
+      #link = self.vertex(hint).links[0]
+      hint = self.__find_up(hint[(i-1)%3], hint[(i+1)%3])
+
+    found = False
+    print("  >>> findFirst:")
+    while not found:
+      print("  analyzing face (%d,%d,%d)" % (hint[0], hint[1], hint[2]))
+      v0 = self.vertex(hint[0])
+      v1 = self.vertex(hint[1])
+      v2 = self.vertex(hint[2])
+      
+      p0 = v0.point
+      p1 = v1.point
+      p2 = v2.point
+      print("    > p0: ", p0.coords)
+      print("    > p1: ", p1.coords)
+      print("    > p2: ", p2.coords)
+
+      print("    Computing first predicate")
+      e0 = orientation(p0, p1, p) + 1
+      print("    Computing second predicate")
+      e1 = orientation(p1, p2, p) + 1
+      print("    Computing third predicate")
+      e2 = orientation(p2, p0, p) + 1
+
+      mask = int(e2*9 + e1*3 + e0)
+      
+      if mask in [11, 20, 19]: # walk to v0 opposite vertex
+        hint = self.__find_up(hint[2], hint[1])
+      elif mask in [5, 7, 8]: # walk to v1 opposite vertex
+        hint = self.__find_up(hint[0], hint[2])
+      elif mask in [15, 21, 24]: # walk to v2 opposite vertex
+        hint = self.__find_up(hint[1], hint[2])
+      elif mask == 2: # walk to v0 or v1 opposite vertex
+        edge = random.choice([[hint[2],hint[1]],[hint[0],hint[2]]])
+        hint = self.__find_up(edge[0], edge[1])
+      elif mask == 6: # walk to v1 or v2 opposite vertex
+        edge = random.choice([[hint[0],hint[2]],[hint[1],hint[0]]])
+        hint = self.__find_up(edge[0], edge[1])
+      elif mask == 18: # walk to v2 or v0 opposite vertex
+        edge = random.choice([[hint[1],hint[0]],[hint[2],hint[1]]])
+        hint = self.__find_up(edge[0], edge[1])
+      elif mask == 16: # found at vertex v0
+        found = True
+      elif mask == 22: # found at vertex v1
+        hint = [hint[1],hint[2],hint[0]]
+        found = True
+      elif mask == 14: # found at vertex v2
+        hint = [hint[2],hint[0],hint[1]]
+        found = True
+      elif mask == 25: # found at edge (v0,v1)
+        found = True
+      elif mask == 23: # found at edge (v1,v2)
+        hint = [hint[1],hint[2],hint[0]]
+        found = True
+      elif mask == 17: # found at edge (v2,v0)
+        hint = [hint[2],hint[0],hint[1]]
+        found = True
+      elif mask == 26: # found inside face (v0,v1,v2)
+        found = True
+      else: # 0 | 1 | 3 | 4 | 9 | 10 | 12 | 13: # undefined
+        return None
+
+      if hint[2] == 0: # p is outside the convex hull
+        break
+      else: # could not be an infinite face
+        assert 0 not in hint
+
+    return hint
+
+  def __find_other_conflicts(self, p, first):
+    conflict = [first]
+    cavity = []
+    Q = Queue(maxsize = 0) # do we need an infinite size queue?
+    Q.put(first)
+
+    print("VERTICES SIZE: ", self.number_of_vertices)
+
+    visited = numpy.full(self.number_of_vertices, False)
+    
+    while not Q.empty():
+      face = Q.get()
+      print("  >> popped face: %d %d %d" % (face[0], face[1], face[2]))
+      # check each neighbor face for conflict
+      for i in range(3):
+        v0 = face[(i+1)%3]
+        v1 = face[i]
+        N = self.__find_up(v0, v1) # neighbor face
+
+        print("    >>> has neighbor: %d %d %d" % (N[0], N[1], N[2]))
+
+        # if visited, skip
+        if visited[N[0]] and visited[N[1]] and visited[N[2]]:
+          continue
+
+        in_conflict = self.__in_conflict(p, N[0], N[1], N[2])
+
+        if in_conflict:
+          print("      >>>> neighbor IN CONFLICT")
+          conflict.append(N)
+          Q.put(N)
+        else: # we've reached the boundary of the cavity
+          cavity.append([v1, v0])
+          print("      >>>> boundary reached")
+
+      # mark vertices as visited
+      print("BEFORE: ", visited)
+      visited[numpy.array(face)] = True
+      print("AFTER: ", visited)
+    
+    return conflict, cavity
+  
+  def __remove_conflict(self, conflict):
+    print("  >> removing cavity...")
+
+    print("    | BEFORE")
+    self.print()
+    # remove faces from cavity
+    for face in conflict:
+      v0 = face[0]
+      v1 = face[1]
+      v2 = face[2]
+      self.__remove_face(v0, v1, v2)
+    
+    print("    | AFTER ")
+    self.print()
+
+  def __fill_cavity(self, p, cavity):
+    self.__create_vertex()
+    v0 = self.number_of_vertices - 1
+    print("  >> filling cavity: added vertex %d" % v0)
+    for edge in cavity:
+      v1 = edge[0]
+      v2 = edge[1]
+      print("    | adding face %d %d %d" % (v0, v1, v2))
+      self.__insert_face(v0, v1, v2)
+    
+    self.vertex(v0).set_point(p)
+
+  # OUTPUT methods
+  def print(self):
     self.__tds.print()
 
   def draw_labels(self):
-    for i, v in enumerate(self.__tds.vertices):
+    for i, v in enumerate(self.vertices):
       p = v.point
       label = r"$v_{0}$".format(i)
       self.__canvas.draw_label(label, p)
@@ -381,10 +446,10 @@ class DelaunayTriangulation:
       iv0 = face[0]
       iv1 = face[1]
       iv2 = face[2]
-      if not self.__tds.is_infinite(iv0, iv1, iv2):
-        v0 = self.__tds.vertices[iv0]
-        v1 = self.__tds.vertices[iv1]
-        v2 = self.__tds.vertices[iv2]
+      if not self.__is_infinite(iv0, iv1, iv2):
+        v0 = self.vertex(iv0)
+        v1 = self.vertex(iv1)
+        v2 = self.vertex(iv2)
         self.__canvas.draw_triangle(v0.point, v1.point, v2.point, filled=True)
 
   def draw_circumcircles(self, faces):
@@ -393,10 +458,10 @@ class DelaunayTriangulation:
       iv0 = face[0]
       iv1 = face[1]
       iv2 = face[2]
-      if not self.__tds.is_infinite(iv0, iv1, iv2):
-        v0 = self.__tds.vertices[iv0]
-        v1 = self.__tds.vertices[iv1]
-        v2 = self.__tds.vertices[iv2]
+      if not self.__is_infinite(iv0, iv1, iv2):
+        v0 = self.vertex(iv0)
+        v1 = self.vertex(iv1)
+        v2 = self.vertex(iv2)
 
         c,r = circumcircle(v0.point, v1.point, v2.point)
         print("Circumcircle: c = (%f, %f), r = %f" % (c.x, c.y, r))
@@ -408,24 +473,10 @@ class DelaunayTriangulation:
     for edge in cavity:
       iv0 = edge[0]
       iv1 = edge[1]
-      if not self.__tds.is_infinite(iv0, iv1):
-        v0 = self.__tds.vertices[iv0]
-        v1 = self.__tds.vertices[iv1]
+      if not self.__is_infinite(iv0, iv1):
+        v0 = self.vertex(iv0)
+        v1 = self.vertex(iv1)
         self.__canvas.draw_segment(v0.point, v1.point)
-
-  def __draw(self):
-    for iv0 in range(1, len(self.__tds.vertices)): # skip infinite vertex
-      v0 = self.__tds.vertices[iv0]
-      for path in v0.links:
-        for j in range(len(path)-1):
-          iv1 = path[j]
-          iv2 = path[j+1]
-          if not self.__tds.is_infinite(iv0, iv1, iv2):
-            print("drawing face: %d %d %d" % (iv0, iv1, iv2))
-            v1 = self.__tds.vertices[iv1]
-            v2 = self.__tds.vertices[iv2]
-            self.__canvas.draw_triangle(v0.point, v1.point, v2.point, filled=False)
-    self.draw_labels()
 
   def draw(self):
     if self.__canvas is None:
@@ -438,3 +489,17 @@ class DelaunayTriangulation:
     self.__canvas.begin()
     self.__draw()
     self.__canvas.end()
+
+  def __draw(self):
+    for iv0 in range(1, self.number_of_vertices): # skip infinite vertex
+      v0 = self.vertex(iv0)
+      for path in v0.links:
+        for j in range(len(path)-1):
+          iv1 = path[j]
+          iv2 = path[j+1]
+          if not self.__is_infinite(iv0, iv1, iv2):
+            print("drawing face: %d %d %d" % (iv0, iv1, iv2))
+            v1 = self.vertex(iv1)
+            v2 = self.vertex(iv2)
+            self.__canvas.draw_triangle(v0.point, v1.point, v2.point, filled=False)
+    self.draw_labels()

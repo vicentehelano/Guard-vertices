@@ -13,8 +13,7 @@ class Vertex: # here
     self.__links = []
     self.__point = point
 
-  def set_point(self, point):
-    self.__point = point
+  # ACCESS methods
 
   @property
   def links(self):
@@ -23,6 +22,12 @@ class Vertex: # here
   @property
   def point(self):
     return self.__point
+
+  # UPDATE methods
+
+  def set_point(self, point):
+    self.__point = point
+
 
 class StarVertices:
   """
@@ -34,12 +39,64 @@ class StarVertices:
     self.create_vertex() # infinite vertex, index 0
     self.__vertices[0].set_point( Point(numpy.inf,numpy.inf) )
 
+  # ACCESS methods
+
+  def vertex(self, i):
+    return self.__vertices[i]
+
   @property
   def vertices(self):
     return self.__vertices
+  
+  @property
+  def number_of_vertices(self): # number of vertices
+    return len(self.__vertices)
+  
+  # find_up sempre retorna o triângulo que contém
+  # o simplexo dado.
+  def find_up(self, v0, v1=None):
+    if v0 is not None:
+      if v1 is not None: # return oriented face (v0,v1,v2)
+        i1 = p1 = None
+        links = self.vertex(v0).links
+        # get the path and index of v1
+        for index, path in enumerate(links):
+          if v1 in path:
+            i1 = path.index(v1)
+            p1 = index
+
+        link = self.vertex(v0).links[p1]
+        last = len(link) - 1
+        if i1 == last: # open link, because 'index()' always return first occurrence
+          return None  # so, there is no 'v2' such that (v0,v1,v2) is a face
+
+        v2 = link[i1+1]
+        return v0, v1, v2
+      else: # return any edge (v0,v1)
+        pass
+    else: # error
+      return None
+    
+  # PREDICATE methods
+    
+  def is_infinite(self, v0, v1 = None, v2 = None):
+    if v2 is None:
+      if v1 is None:
+        return v0 == 0
+      else:
+        return  (v0 == 0) or (v1 == 0)
+    else:
+      return  (v0 == 0) or (v1 == 0) or (v2 == 0)
+
+  # UPDATE methods
 
   def create_vertex(self):
-    self.__vertices.append(Vertex())
+    self.vertices.append(Vertex())
+
+  def insert_face(self, v0, v1, v2):
+    self.__insert_face(v0, v1, v2)
+    self.__insert_face(v1, v2, v0)
+    self.__insert_face(v2, v0, v1)
 
   # A triangle t can be added by finding the representative
   # vertices of t and extending each of their link sets.
@@ -53,7 +110,7 @@ class StarVertices:
   #         ends of the same path.
   def __insert_face(self, v0, v1, v2):
     i1 = i2 = p1 = p2 = None
-    links = self.__vertices[v0].links
+    links = self.vertex(v0).links
     print("      | adding face to vertex %d" % v0)
     print("      |                link before: ", links)
     # get the path of each neighbor, and its respective index
@@ -88,17 +145,17 @@ class StarVertices:
         links[p1].append(v2)
     print("      |                link after: ", links)
 
-  def insert_face(self, v0, v1, v2):
-    self.__insert_face(v0, v1, v2)
-    self.__insert_face(v1, v2, v0)
-    self.__insert_face(v2, v0, v1)
+  def remove_face(self, v0, v1, v2):
+    self.__remove_face(v0, v1, v2)
+    self.__remove_face(v1, v2, v0)
+    self.__remove_face(v2, v0, v1)
 
   # A triange t can be deleted by finding the representative
   # vertices of t and splitting a cycle or a path of each of
   # their links.
   def __remove_face(self, v0, v1, v2):
     i1 = i2 = p1 = p2 = None
-    links = self.__vertices[v0].links
+    links = self.vertex(v0).links
     for index, path in enumerate(links):
       if v1 in path:
         i1 = path.index(v1)
@@ -131,46 +188,10 @@ class StarVertices:
       if len(latest) > 1:
         links.insert(p1+1,latest)
 
-  def remove_face(self, v0, v1, v2):
-    self.__remove_face(v0, v1, v2)
-    self.__remove_face(v1, v2, v0)
-    self.__remove_face(v2, v0, v1)
 
-  # find_up sempre retorna o triângulo que contém
-  # o simplexo dado.
-  def find_up(self, v0, v1=None):
-    if v0 is not None:
-      if v1 is not None: # return oriented face (v0,v1,v2)
-        i1 = p1 = None
-        links = self.__vertices[v0].links
-        # get the path and index of v1
-        for index, path in enumerate(links):
-          if v1 in path:
-            i1 = path.index(v1)
-            p1 = index
-
-        link = self.__vertices[v0].links[p1]
-        last = len(link) - 1
-        if i1 == last: # open link, because 'index()' always return first occurrence
-          return None  # so, there is no 'v2' such that (v0,v1,v2) is a face
-
-        v2 = link[i1+1]
-        return v0, v1, v2
-      else: # return any edge (v0,v1)
-        pass
-    else: # error
-      return None
-    
-  def is_infinite(self, v0, v1 = None, v2 = None):
-    if v2 is None:
-      if v1 is None:
-        return v0 == 0
-      else:
-        return  (v0 == 0) or (v1 == 0)
-    else:
-      return  (v0 == 0) or (v1 == 0) or (v2 == 0)
+  # OUTPUT methods
 
   def print(self):
     print('> links:')
-    for i in range(len(self.__vertices)):
-      print(self.__vertices[i].links)
+    for i in range(self.number_of_vertices):
+      print(self.vertex(i).links)
