@@ -8,7 +8,7 @@ Tips:
 import numpy
 
 from sources.utils import Point
-from sources.stars import StarVertices
+from sources.links import LinkVertices
 from sources.delaunay import DelaunayTriangulation
 
 def exampleBlandford():
@@ -24,7 +24,7 @@ def exampleBlandford():
   return numpy.array(points)
 
 def exampleDelaunayTriangulation():
-  Dt = DelaunayTriangulation(StarVertices)
+  Dt = DelaunayTriangulation(LinkVertices)
   points = exampleBlandford()
   Dt.visual_insert(points)
 

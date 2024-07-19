@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """\
-This is file `test_StarVertices.py'.
+This is file `test_LinkVertices.py'.
 
-Tests for the StarVertices class.
+Tests for the LinkVertices class.
 
 Copyright (C) 2024 any individual authors listed elsewhere in this file.
 
@@ -17,10 +17,10 @@ CC0 1.0 Universal for more details.
 
 Author(s): Vicente Sobrinho <vicente.sobrinho@ufca.edu.br>
 """
-from sources.stars import StarVertices
+from sources.links import LinkVertices
 
-def testStarVertices():
-  t = StarVertices()
+def testLinkVertices():
+  t = LinkVertices()
 
   for i in range(9):
     t.create_vertex()
@@ -78,4 +78,4 @@ def testStarVertices():
 
 
 if __name__ == '__main__':
-  testStarVertices()
+  testLinkVertices()

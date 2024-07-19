@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Test: StarVertices",
+            "name": "Test: LinkVertices",
             "type": "debugpy",
             "request": "launch",
-            "module": "tests.test_StarVertices"
+            "module": "tests.test_LinkVertices"
         },
         {
             "name": "Test: DelaunayTriangulation",

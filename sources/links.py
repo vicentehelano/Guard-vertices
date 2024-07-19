@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This is file `stars.py'.
+This is file `links.py'.
 
 An uncompressed implementation of the Blandford-Blelloch-Cardoze-Kadow data
 structure for planar triangulations.
@@ -25,10 +25,10 @@ from .utils import Point
 
 class Vertex:
   """\
-  Vertex base class for the star-vertices data structure of Blandford et al. (2005).
+  Vertex base class for the link-based data structure of Blandford et al. (2005).
 
-  Each vertex stores a list of its neighboring vertices as lists of integers,
-  besides its underlying point.
+  Each vertex stores its link set as a list of lists of integers and its
+  underlying point.
 
   Parameters
   ----------
@@ -41,6 +41,7 @@ class Vertex:
   >>> v.set_point(Point(0.0, 0.0))
   """
   def __init__(self, point=None):
+    """Initializes the Vertex class."""
     self.__links = []
     self.__point = point
 
@@ -48,19 +49,21 @@ class Vertex:
 
   @property
   def links(self):
+    """Returns a reference to the vertex link."""
     return self.__links
 
   @property
   def point(self):
+    """Returns a reference to underlying point."""
     return self.__point
 
   # UPDATE methods
 
   def set_point(self, point):
+    """Set point coordinates."""
     self.__point = point
 
-
-class StarVertices:
+class LinkVertices:
   """\
   An uncompressed implementation of Blandford-Blelloch-Cardoze-Kadow data
   structure for planar triangulations.
@@ -78,7 +81,7 @@ class StarVertices:
   --------
   We can construct a triangulation with a single finite triangle as follows:
 
-  >>> t = StarVertices()
+  >>> t = LinkVertices()
   >>> for i in range(3):
   >>>   t.create_vertex()
   >>> t.insert_face(0,2,1)
@@ -94,6 +97,7 @@ class StarVertices:
       Geometry & Applications, v. 15, n. 1, p. 3-24, 2005.
   """
   def __init__(self):
+    """Initializes the LinkVertices class."""
     self.__vertices = []
     self.create_vertex() # infinite vertex, index 0
     self.__vertices[0].set_point( Point(numpy.inf,numpy.inf) )
@@ -101,21 +105,24 @@ class StarVertices:
   # ACCESS methods
 
   def vertex(self, i):
+    """Returns a reference to the i-th vertex."""
     return self.__vertices[i]
 
   @property
   def vertices(self):
+    """Returns a reference to the container of vertices."""
     return self.__vertices
   
   @property
   def number_of_vertices(self): # number of vertices
+    """Returns the total number of vertices, including the infinite one."""
     return len(self.__vertices)
   
   # find_up sempre retorna o triângulo que contém
   # o simplexo dado.
   def find_up(self, v0, v1=None):
     if v0 is not None:
-      if v1 is not None: # return oriented face (v0,v1,v2)
+      if v1 is not None: # edge (v0,v1) defined, return oriented face (v0,v1,v2)
         i1 = p1 = None
         links = self.vertex(v0).links
         # get the path and index of v1
@@ -123,16 +130,23 @@ class StarVertices:
           if v1 in path:
             i1 = path.index(v1)
             p1 = index
+            break
 
         link = self.vertex(v0).links[p1]
         last = len(link) - 1
-        if i1 == last: # open link, because 'index()' always return first occurrence
-          return None  # so, there is no 'v2' such that (v0,v1,v2) is a face
+         
+         # If link[i1] == link[last], we must have i1 != last indicating a closed link,
+         # because 'index()' always return first occurrence, so i1 < last.
+         # Thus, if i1 == last, we have an open link.
+         # So, there is no 'v2' such that (v0,v1,v2) is a face
+        if i1 == last:
+          return None
 
         v2 = link[i1+1]
         return v0, v1, v2
       else: # return any edge (v0,v1)
-        pass
+        link = self.vertex(v0).links[0]
+        return v0, link[0]
     else: # error
       return None
     

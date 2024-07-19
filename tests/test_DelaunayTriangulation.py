@@ -20,7 +20,7 @@ Author(s): Vicente Sobrinho <vicente.sobrinho@ufca.edu.br>
 import numpy
 
 from sources.utils import Point
-from sources.stars import StarVertices
+from sources.links import LinkVertices
 from sources.delaunay import DelaunayTriangulation
 
 def exampleBlandford():
@@ -36,7 +36,7 @@ def exampleBlandford():
   return numpy.array(points)
 
 def testDelaunayTriangulation():
-  Dt = DelaunayTriangulation(StarVertices)
+  Dt = DelaunayTriangulation(LinkVertices)
   points = exampleBlandford()
   Dt.insert(points)
   Dt.draw()

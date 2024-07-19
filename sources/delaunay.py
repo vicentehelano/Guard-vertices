@@ -52,7 +52,7 @@ class DelaunayTriangulation:
 
   Examples
   --------
-  >>> t = DelaunayTriangulation(StartVertices)
+  >>> t = DelaunayTriangulation(LinkVertices)
   >>> t.insert(Point(0.0, 0.0))
   >>> t.insert(Point(1.0, 0.0))
   >>> t.insert(Point(0.0, 1.0))
