@@ -23,7 +23,23 @@ import numpy
 # Import from local packages
 from .utils import Point
 
-class Vertex: # here
+class Vertex:
+  """\
+  Vertex base class for the star-vertices data structure of Blandford et al. (2005).
+
+  Each vertex stores a list of its neighboring vertices as lists of integers,
+  besides its underlying point.
+
+  Parameters
+  ----------
+    point : Point (optional)
+            Any representation of a planar point (x,y).
+
+  Examples
+  --------
+  >>> v = Vertex()
+  >>> v.set_point(Point(0.0, 0.0))
+  """
   def __init__(self, point=None):
     self.__links = []
     self.__point = point
@@ -45,9 +61,37 @@ class Vertex: # here
 
 
 class StarVertices:
-  """
-  This is an object oriented implementation of Blandford's simplicial
-  complex data structure.
+  """\
+  An uncompressed implementation of Blandford-Blelloch-Cardoze-Kadow data
+  structure for planar triangulations.
+
+  Each vertex link is implemented as a bare Python list of lists of indices,
+  sorted in counter-clockwise order.
+  The infinite vertex is always located at position 0 (zero).
+  One can insert points, but not to remove vertices yet.
+
+  Parameters
+  ----------
+    empty : empty
+
+  Examples
+  --------
+  We can construct a triangulation with a single finite triangle as follows:
+
+  >>> t = StarVertices()
+  >>> for i in range(3):
+  >>>   t.create_vertex()
+  >>> t.insert_face(0,2,1)
+  >>> t.insert_face(0,3,2)
+  >>> t.insert_face(0,1,3)
+  >>> t.insert_face(1,2,3)
+  >>> t.print()
+
+  References
+  ----------
+    Blandford, D. K. et al., Compact representations of simplicial meshes in
+      two and three dimensions. International Journal of Computational
+      Geometry & Applications, v. 15, n. 1, p. 3-24, 2005.
   """
   def __init__(self):
     self.__vertices = []
@@ -202,7 +246,6 @@ class StarVertices:
         links.insert(p1,first)
       if len(latest) > 1:
         links.insert(p1+1,latest)
-
 
   # OUTPUT methods
 
