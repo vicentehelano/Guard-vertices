@@ -21,7 +21,7 @@ Author(s): Vicente Sobrinho <vicente.sobrinho@ufca.edu.br>
 import numpy
 
 # Import from local packages
-from .utils import Point
+from .utils import Point, cw, ccw
 
 class Vertex:
   """\
@@ -118,9 +118,13 @@ class LinkVertices:
     """Returns the total number of vertices, including the infinite one."""
     return len(self.__vertices)
   
+  def neighbor(self, i, f):
+    """Returns the neighbor face opposite to the i-th vertex of `f`."""
+    return self.__find_up(f[cw(i)], f[ccw(i)])
+
   # find_up sempre retorna o triângulo que contém
   # o simplexo dado.
-  def find_up(self, v0, v1=None):
+  def __find_up(self, v0, v1=None):
     if v0 is not None:
       if v1 is not None: # edge (v0,v1) defined, return oriented face (v0,v1,v2)
         i1 = p1 = None

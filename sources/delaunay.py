@@ -25,7 +25,7 @@ from queue import Queue
 
 # Local imports
 from .utils import Point, Circle, BoundingBox
-from .utils import orientation, in_between, circumcircle
+from .utils import orientation, in_between, circumcircle, cw, ccw
 from .canvas import Canvas
 from .brio import Brio
 
@@ -43,10 +43,9 @@ class DelaunayTriangulation:
           An implementation of a triangulation data structure providing at
           least the following methods:
             - vertex(i: int): returns the i-th vertex of `tds`.
+            - neighbor(i: int, f: list): returns the i-th neighbor of face `f`.
             - create_vertex(): create a new vertex in `tds`.
             - insert_face(v0: int, v1: int, v2: int):  insert face (a,b,c) into `tds`.
-            - find_up(v0: int, v1: int | None): returns an ordered edge or face in `tds`
-              with v0 or (v0, v2) as a facet.
             - remove_face(v0: int, v1: int, v2: int): remove face (v0,v1,v2) from `tds`.
             - is_infinite(v0: int, v1: int, v2: int): check if face (v0,v1,v2) is infinite.
 
@@ -77,8 +76,8 @@ class DelaunayTriangulation:
   def number_of_vertices(self): # number of vertices, including the infinite one
     return self.__tds.number_of_vertices
   
-  def __find_up(self, v0, v1):
-    return self.__tds.find_up(v0, v1)
+  def neighbor(self, i, f):
+    return self.__tds.neighbor(i, f)
 
   # PREDICATE methods
 
@@ -307,8 +306,7 @@ class DelaunayTriangulation:
   def __find_first_conflict(self, p, hint):
     if 0 in hint: # infinite face, find oposite face, which must be finite
       i = hint.index(0)
-      #link = self.vertex(hint).links[0]
-      hint = self.__find_up(hint[(i-1)%3], hint[(i+1)%3])
+      hint = self.neighbor(i, hint)
 
     found = False
     print("  >>> findFirst:")
@@ -335,20 +333,20 @@ class DelaunayTriangulation:
       mask = int(e2*9 + e1*3 + e0)
       
       if mask in [11, 20, 19]: # walk to v0 opposite vertex
-        hint = self.__find_up(hint[2], hint[1])
+        hint = self.neighbor(0, hint)
       elif mask in [5, 7, 8]: # walk to v1 opposite vertex
-        hint = self.__find_up(hint[0], hint[2])
+        hint = self.neighbor(1, hint)
       elif mask in [15, 21, 24]: # walk to v2 opposite vertex
-        hint = self.__find_up(hint[1], hint[2])
+        hint = self.neighbor(2, hint)
       elif mask == 2: # walk to v0 or v1 opposite vertex
-        edge = random.choice([[hint[2],hint[1]],[hint[0],hint[2]]])
-        hint = self.__find_up(edge[0], edge[1])
+        i = random.choice([0,1])
+        hint = self.neighbor(i, hint)
       elif mask == 6: # walk to v1 or v2 opposite vertex
-        edge = random.choice([[hint[0],hint[2]],[hint[1],hint[0]]])
-        hint = self.__find_up(edge[0], edge[1])
+        i = random.choice([1,2])
+        hint = self.neighbor(i, hint)
       elif mask == 18: # walk to v2 or v0 opposite vertex
-        edge = random.choice([[hint[1],hint[0]],[hint[2],hint[1]]])
-        hint = self.__find_up(edge[0], edge[1])
+        i = random.choice([0,2])
+        hint = self.neighbor(i, hint)
       elif mask == 16: # found at vertex v0
         found = True
       elif mask == 22: # found at vertex v1
@@ -392,10 +390,7 @@ class DelaunayTriangulation:
       print("  >> popped face: %d %d %d" % (face[0], face[1], face[2]))
       # check each neighbor face for conflict
       for i in range(3):
-        v0 = face[(i+1)%3]
-        v1 = face[i]
-        N = self.__find_up(v0, v1) # neighbor face
-
+        N = self.neighbor(i, face)
         print("    >>> has neighbor: %d %d %d" % (N[0], N[1], N[2]))
 
         # if visited, skip
@@ -409,7 +404,7 @@ class DelaunayTriangulation:
           conflict.append(N)
           Q.put(N)
         else: # we've reached the boundary of the cavity
-          cavity.append([v1, v0])
+          cavity.append([face[ccw(i)], face[cw(i)]])
           print("      >>>> boundary reached")
 
       # mark vertices as visited

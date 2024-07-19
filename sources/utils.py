@@ -27,6 +27,12 @@ SMALLER = -1
 EQUAL   = +0
 LARGER  = +1
 
+def cw(i):
+  return (i-1)%3
+
+def ccw(i):
+  return (i+1)%3
+
 class Point: # here
   def __init__(self, x, y):
     self.__x = x
