@@ -2,7 +2,7 @@
 *A guard-based data structure for triangulations*
 
 This repository is under development.
-It will contain a Python implementation of a compact data structure for triangulations using the concept of vertex-guards (Batista, 2010).
+It will contain a Python implementation of a compact data structure for planar triangulations using the concept of vertex-guards due to Batista (2010).
 At the moment, we have only an uncompressed implementation of Blandford et al. (2005) data structure.
 
 ## References
