@@ -122,9 +122,32 @@ class LinkVertices:
     """Returns the neighbor face opposite to the i-th vertex of `f`."""
     return self.__find_up(f[cw(i)], f[ccw(i)])
 
-  # find_up sempre retorna o triângulo que contém
-  # o simplexo dado.
   def __find_up(self, v0, v1=None):
+    """\
+    Returns an ordered simplex with the given ordered sub-simplex.
+
+    If `v1 == None`, returns any face incident to vertex `v0`.
+    Otherwise, returns the unique ordered simplex/face/triangle containing
+    edge (v0, v1).
+
+    Parameters
+    ----------
+      v0 : int
+          The number of an existing vertex.
+      v1 : int | None
+          The number of an existing vertex, which forms an edge with `v0`.
+
+    Returns
+    -------
+      (v0, v1, v2) : (int, int, int)
+          A valid face (v0, v1, v2), if any. Otherwise, returns None.
+
+    References
+    ----------
+      Blandford, D. K. et al., Compact representations of simplicial meshes in
+        two and three dimensions. International Journal of Computational
+        Geometry & Applications, v. 15, n. 1, p. 3-24, 2005.
+    """
     if v0 is not None:
       if v1 is not None: # edge (v0,v1) defined, return oriented face (v0,v1,v2)
         i1 = p1 = None
@@ -157,6 +180,7 @@ class LinkVertices:
   # PREDICATE methods
     
   def is_infinite(self, v0, v1 = None, v2 = None):
+    """Returns True, if any vertex in {v0,v1,v2} is infinite."""
     if v2 is None:
       if v1 is None:
         return v0 == 0
@@ -168,24 +192,52 @@ class LinkVertices:
   # UPDATE methods
 
   def create_vertex(self):
+    """Insert a new vertex at the end of the vertices container."""
     self.vertices.append(Vertex())
 
   def insert_face(self, v0, v1, v2):
+    """\
+    Insert in-place face `(v0, v1, v2)` into the triangulation.
+
+    This method implements the `add` operation as described in the page 11,
+    fourth paragraph, of Blandford et al. (2005). A triangle `t` can be added
+    by finding its vertices and extending each of their link sets.
+    The extension is carried out by the helper method `__insert_face`.
+
+    Parameters
+    ----------
+      (v0, v1, v2) : (int, int, int)
+          A valid face (v0, v1, v2), if any. Otherwise, returns None.
+
+    References
+    ----------
+      Blandford, D. K. et al., Compact representations of simplicial meshes in
+        two and three dimensions. International Journal of Computational
+        Geometry & Applications, v. 15, n. 1, p. 3-24, 2005.
+    """
     self.__insert_face(v0, v1, v2)
     self.__insert_face(v1, v2, v0)
     self.__insert_face(v2, v0, v1)
 
-  # A triangle t can be added by finding the representative
-  # vertices of t and extending each of their link sets.
-  # This extension might:
-  #     (i) add a new path to the set, if neither of the two
-  #         vertices are in the set;
-  #    (ii) extend an existing path, if one vertex is in the set;
-  #   (iii) join two existing paths, if the two vertices are in
-  #         separate paths;
-  #    (iv) join a path into a cycle, if the two vertices are the
-  #         ends of the same path.
   def __insert_face(self, v0, v1, v2):
+    """\
+    Insert in-place face `(v0, v1, v2)` into the link of vertex `v0`.
+
+    This function implements the `extension` operation as described in the
+    page 11, fourth paragraph, of Blandford et al. (2005), as follows:
+       (i) add a new path to the link set, if neither of the two
+           vertices are in the set;
+      (ii) extend an existing path, if one vertex is in the link set;
+     (iii) join two existing paths, if the two vertices are in
+           separate paths;
+      (iv) join a path into a cycle, if the two vertices are the
+           ends of the same path.
+
+    Parameters
+    ----------
+      v0, v1, v2 : int, int, int
+          The face vertices.
+    """
     i1 = i2 = p1 = p2 = None
     links = self.vertex(v0).links
     print("      | adding face to vertex %d" % v0)
@@ -223,14 +275,42 @@ class LinkVertices:
     print("      |                link after: ", links)
 
   def remove_face(self, v0, v1, v2):
+    """\
+    Remove in-place face `(v0, v1, v2)` from the triangulation.
+
+    This method implements the `delete` operation as described in the page 11,
+    fourth paragraph, of Blandford et al. (2005).
+    A triange t can be deleted by finding its vertices and splitting a cycle
+    or a path of each of their link sets.
+
+    Parameters
+    ----------
+      (v0, v1, v2) : (int, int, int)
+          A valid face (v0, v1, v2), if any. Otherwise, returns None.
+
+    References
+    ----------
+      Blandford, D. K. et al., Compact representations of simplicial meshes in
+        two and three dimensions. International Journal of Computational
+        Geometry & Applications, v. 15, n. 1, p. 3-24, 2005.
+    """
     self.__remove_face(v0, v1, v2)
     self.__remove_face(v1, v2, v0)
     self.__remove_face(v2, v0, v1)
 
-  # A triange t can be deleted by finding the representative
-  # vertices of t and splitting a cycle or a path of each of
-  # their links.
+  
   def __remove_face(self, v0, v1, v2):
+    """\
+    Remove in-place face `(v0, v1, v2)` from the link set of vertex `v0`.
+
+    Different from Blandford et al. (2005), we do not remove vertices
+    with empty link sets at the end.
+
+    Parameters
+    ----------
+      v0, v1, v2 : int, int, int
+          The vertices of the face to be removed.
+    """
     i1 = i2 = p1 = p2 = None
     links = self.vertex(v0).links
     for index, path in enumerate(links):
@@ -268,6 +348,16 @@ class LinkVertices:
   # OUTPUT methods
 
   def print(self):
+    """\
+    Writes to the standard output stream the link sets of all vertices.
+
+    The triangulation data structure is not supposed to have an undelying
+    geometry. So, it outputs only the connectivity.
+
+    Parameters
+    ----------
+      empty : empty
+    """
     print('> links:')
     for i in range(self.number_of_vertices):
       print(self.vertex(i).links)
