@@ -26,7 +26,8 @@ from sources.generators import *
 def testGenerator():
   n = int(input("Enter the desired number of points: "))
 
-  points = random_points_on_axes(n)
+  generate = Generator()
+  points = generate.random_points_on_axes(n)
   bbox = BoundingBox()
   bbox.reshape(points)
   bbox.scale(1.25)
@@ -38,7 +39,7 @@ def testGenerator():
   canvas.end()
   canvas.close()
 
-  points = random_points_in_square(n)
+  points = generate.random_points_in_square(n)
   bbox = BoundingBox()
   bbox.reshape(points)
   bbox.scale(1.25)
@@ -50,7 +51,7 @@ def testGenerator():
   canvas.end()
   canvas.close()
 
-  points = random_points_in_disc(n)
+  points = generate.random_points_in_disc(n)
   bbox = BoundingBox()
   bbox.reshape(points)
   bbox.scale(1.25)
@@ -62,7 +63,7 @@ def testGenerator():
   canvas.end()
   canvas.close()
 
-  points = random_points_on_parabola(n)
+  points = generate.random_points_on_parabola(n)
   bbox = BoundingBox()
   bbox.reshape(points)
   bbox.scale(1.25)
