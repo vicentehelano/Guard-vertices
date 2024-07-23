@@ -240,8 +240,6 @@ class LinkVertices:
     """
     i1 = i2 = p1 = p2 = None
     links = self.vertex(v0).links
-    print("      | adding face to vertex %d" % v0)
-    print("      |                link before: ", links)
     # get the path of each neighbor, and its respective index
     for index, path in enumerate(links):
       if v1 in path:
@@ -272,7 +270,6 @@ class LinkVertices:
         # we can only join extreme neighbors
         assert i2 == 0 and (i1+1) == len(links[p1])
         links[p1].append(v2)
-    print("      |                link after: ", links)
 
   def remove_face(self, v0, v1, v2):
     """\

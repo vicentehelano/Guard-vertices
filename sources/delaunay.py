@@ -28,14 +28,15 @@ from .utils import Point, Circle, BoundingBox
 from .utils import orientation, in_between, circumcircle, cw, ccw
 from .canvas import Canvas
 from .brio import Brio
+from .log import *
 
 class DelaunayTriangulation:
   """\
   Constructs the Delaunay triangulation of a planar point set.
 
   This class contains an implementation of the Boywer-Watson algorithm
-  con BRIO for triangulating planar point sets.
-  It closely follows CGAL's Triangulation_3 design.
+  con BRIO for triangulating planar point sets. It closely follows CGAL's
+  Delaunay_triangulation_3 design.
 
   Parameters
   ----------
@@ -67,10 +68,6 @@ class DelaunayTriangulation:
 
   def vertex(self, i):
     return self.__tds.vertex(i)
-  
-  @property
-  def vertices(self):
-    return self.__tds.vertices
   
   @property
   def number_of_vertices(self): # number of vertices, including the infinite one
@@ -107,35 +104,41 @@ class DelaunayTriangulation:
   def insert(self, points):
     assert len(points) >= 3
 
+    info('Creating BRIO...')
     brio = Brio()
     points = brio(points)
+    info('BRIO done.')
 
+    info('Inserting first three points...')
     self.__insert_first_three(points)
-    print('BOOT DONE')
-    self.print()
+    info('First three insertion done.')
 
+    info('Inserting remaining points...')
     hint = [1, 2, 3] # first finite face
     for p in points[3:]:
-      print("  > Inserting point: ", p.coords)
-      
-      conflict, cavity = self.__find_conflict(p, hint)
-      print("  > conflict set: ", conflict)
-      print("  > cavity: ", cavity)
+      debug("+-- Inserting point: " + str(p.coords))
 
-      print("  > updating cavity...")
+      debug("+-- Finding conflict set.")
+      conflict, cavity = self.__find_conflict(p, hint)
+      debug("    |-- conflict set: " + str(conflict))
+      debug("    |-- cavity: " + str(cavity))
+
+      debug("    |-- removing conflict set.")
       self.__remove_conflict(conflict)
+      debug("    |-- filling cavity.")
       self.__fill_cavity(p, cavity)
 
-      print("new hint:")
+      debug("    |-- updating walk hint face.")
       i = self.number_of_vertices - 1
       link = self.vertex(i).links[0]
       hint[0] = i
       hint[1] = link[0]
       hint[2] = link[1]
 
-    print('INSERTION DONE')
+    info('Insertion done.')
 
     # reshaping bounding box
+    debug("Updating bounding box.")
     self.__bbox.reshape(points)
 
   def visual_insert(self, points):
@@ -260,7 +263,6 @@ class DelaunayTriangulation:
 
   def __find_conflict(self, p, hint):
     first  = self.__find_first_conflict(p, hint)
-    print("    > first conflict", first)
     conflict, cavity = self.__find_other_conflicts(p, first)
     return conflict, cavity
 
@@ -309,9 +311,7 @@ class DelaunayTriangulation:
       hint = self.neighbor(i, hint)
 
     found = False
-    print("  >>> findFirst:")
     while not found:
-      print("  analyzing face (%d,%d,%d)" % (hint[0], hint[1], hint[2]))
       v0 = self.vertex(hint[0])
       v1 = self.vertex(hint[1])
       v2 = self.vertex(hint[2])
@@ -319,15 +319,9 @@ class DelaunayTriangulation:
       p0 = v0.point
       p1 = v1.point
       p2 = v2.point
-      print("    > p0: ", p0.coords)
-      print("    > p1: ", p1.coords)
-      print("    > p2: ", p2.coords)
 
-      print("    Computing first predicate")
       e0 = orientation(p0, p1, p) + 1
-      print("    Computing second predicate")
       e1 = orientation(p1, p2, p) + 1
-      print("    Computing third predicate")
       e2 = orientation(p2, p0, p) + 1
 
       mask = int(e2*9 + e1*3 + e0)
@@ -380,18 +374,13 @@ class DelaunayTriangulation:
     cavity = []
     Q = Queue(maxsize = 0) # do we need an infinite size queue?
     Q.put(first)
-
-    print("VERTICES SIZE: ", self.number_of_vertices)
-
     visited = numpy.full(self.number_of_vertices, False)
-    
+
     while not Q.empty():
       face = Q.get()
-      print("  >> popped face: %d %d %d" % (face[0], face[1], face[2]))
       # check each neighbor face for conflict
       for i in range(3):
         N = self.neighbor(i, face)
-        print("    >>> has neighbor: %d %d %d" % (N[0], N[1], N[2]))
 
         # if visited, skip
         if visited[N[0]] and visited[N[1]] and visited[N[2]]:
@@ -400,43 +389,30 @@ class DelaunayTriangulation:
         in_conflict = self.__in_conflict(p, N[0], N[1], N[2])
 
         if in_conflict:
-          print("      >>>> neighbor IN CONFLICT")
           conflict.append(N)
           Q.put(N)
         else: # we've reached the boundary of the cavity
           cavity.append([face[ccw(i)], face[cw(i)]])
-          print("      >>>> boundary reached")
 
       # mark vertices as visited
-      print("BEFORE: ", visited)
       visited[numpy.array(face)] = True
-      print("AFTER: ", visited)
     
     return conflict, cavity
   
   def __remove_conflict(self, conflict):
-    print("  >> removing cavity...")
-
-    print("    | BEFORE")
-    self.print()
     # remove faces from cavity
     for face in conflict:
       v0 = face[0]
       v1 = face[1]
       v2 = face[2]
       self.__remove_face(v0, v1, v2)
-    
-    print("    | AFTER ")
-    self.print()
 
   def __fill_cavity(self, p, cavity):
     self.__create_vertex()
     v0 = self.number_of_vertices - 1
-    print("  >> filling cavity: added vertex %d" % v0)
     for edge in cavity:
       v1 = edge[0]
       v2 = edge[1]
-      print("    | adding face %d %d %d" % (v0, v1, v2))
       self.__insert_face(v0, v1, v2)
     
     self.vertex(v0).set_point(p)
@@ -446,8 +422,8 @@ class DelaunayTriangulation:
     self.__tds.print()
 
   def draw_labels(self):
-    for i, v in enumerate(self.vertices):
-      p = v.point
+    for i in range(self.number_of_vertices):
+      p = self.vertex(i).point
       label = r"$v_{0}$".format(i)
       self.__canvas.draw_label(label, p)
 
@@ -474,7 +450,6 @@ class DelaunayTriangulation:
         v2 = self.vertex(iv2)
 
         c,r = circumcircle(v0.point, v1.point, v2.point)
-        print("Circumcircle: c = (%f, %f), r = %f" % (c.x, c.y, r))
         circles.append(Circle(c, r))
 
     self.__canvas.draw_circle(circles)
@@ -488,19 +463,17 @@ class DelaunayTriangulation:
         v1 = self.vertex(iv1)
         self.__canvas.draw_segment(v0.point, v1.point)
 
-  def draw(self):
+  def draw(self, with_labels = False):
     if self.__canvas is None:
-      print("> creating canvas...")
       bbox = copy.deepcopy(self.__bbox)
       bbox.scale(1.25)
       self.__canvas = Canvas(bbox)
-      print("> done.")
 
     self.__canvas.begin()
-    self.__draw()
+    self.__draw(with_labels)
     self.__canvas.end()
 
-  def __draw(self):
+  def __draw(self, with_labels):
     for iv0 in range(1, self.number_of_vertices): # skip infinite vertex
       v0 = self.vertex(iv0)
       for path in v0.links:
@@ -508,8 +481,8 @@ class DelaunayTriangulation:
           iv1 = path[j]
           iv2 = path[j+1]
           if not self.__is_infinite(iv0, iv1, iv2):
-            print("drawing face: %d %d %d" % (iv0, iv1, iv2))
             v1 = self.vertex(iv1)
             v2 = self.vertex(iv2)
             self.__canvas.draw_triangle(v0.point, v1.point, v2.point, filled=False)
-    self.draw_labels()
+    if with_labels:
+      self.draw_labels()

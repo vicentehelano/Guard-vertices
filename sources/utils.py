@@ -93,12 +93,6 @@ class BoundingBox:
     self.__min = Point(xmin, ymin)
     self.__max = Point(xmax, ymax)
 
-    print("    > Bounding box corners: ")
-    print("      | x_min: ", xmin)
-    print("      | y_min: ", ymin)
-    print("      | x_max: ", xmax)
-    print("      | y_max: ", ymax)
-
   def scale(self, scale):
     xmin = self.__min.x
     ymin = self.__min.y
@@ -132,10 +126,6 @@ def determinant(a00, a01, a10, a11):
   return a00*a11 - a10*a01
 
 def __circumcircle(p, q, r):
-  print("    >> circumcircle for points:")
-  print("       | p: (%f, %f)" % (p.x, p.y))
-  print("       | q: (%f, %f)" % (q.x, q.y))
-  print("       | r: (%f, %f)" % (r.x, r.y))
   # compute circumcenter
   x_rp = p.x - r.x
   y_rp = p.y - r.y
@@ -166,7 +156,6 @@ def __circumcircle(p, q, r):
 def circumcircle(p, q, r):
   orient = orientation(p, q, r)
   assert orient != 0 # COLLINEAR
-  print("    >> computing circumcircle")
   return __circumcircle(p, q, r)
 
 def orientation(p0: Point, p1: Point, p2: Point, p3 = None):

@@ -31,7 +31,6 @@ class SortingMethod(Enum):
 # Temporarily, we have only implemented NONE and RANDOM.
 class Brio:
   def __init__(self, method = SortingMethod.RANDOM):
-    print("> creating BRIO functor")
     self.__method = method
 
   def __call__(self, points):
@@ -41,7 +40,6 @@ class Brio:
       return P
     if self.__method == SortingMethod.RANDOM:
       numpy.random.shuffle(P)
-      print("  | random shuffle done.")
       return P
     
     return None
