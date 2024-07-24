@@ -27,52 +27,94 @@ SMALLER = -1
 EQUAL   = +0
 LARGER  = +1
 
-class Point: # here
+class Point:
+  """\
+  Representation class of a 2D cartesian point.
+
+  This class provides methods to get and set point coordinates.
+
+  Parameters
+  ----------
+    x : number type (convertible to float64)
+        Point abscissa.
+    y : number type (convertible to float64)
+        Point ordinate.
+          least the following methods:
+  """
   def __init__(self, x, y):
-    self.__x = x
-    self.__y = y
+    """Constructs a Point from its coordinates."""
+    self.__x = numpy.float64(x)
+    self.__y = numpy.float64(y)
 
   @property
   def x(self):
+    """Returns its abscissa."""
     return self.__x
 
   @property
   def y(self):
+    """Returns its ordinate."""
     return self.__y
 
   @property
   def coords(self):
+    """Returns the point coordinates."""
     return (self.__x, self.__y)
   
   def set_coords(self, x, y):
+    """Set the point coordinates."""
     self.__x = x
     self.__y = y
 
   def set_x(self, x):
+    """Set the point abscissa."""
     self.__x = x
 
   def set_y(self, y):
+    """Set the point ordinate."""
     self.__y = y
 
 class Circle:
+  """\
+  Representation class of a 2D circle.
+
+  This class provides methods to get and set circle properties.
+
+  Parameters
+  ----------
+    center : Point
+        The center of the circle.
+    radius : number type (convertible to float64)
+        The circle radius.
+  """
   def __init__(self, center: Point, radius):
+    """Constructs a circle with the given center and radius."""
     self.__center = center
     self.__radius = radius
 
   @property
   def center(self):
+    """Returns the circle center."""
     return self.__center
   
   @property
   def radius(self):
+    """Returns the circle radius."""
     return self.__radius
 
 class BoundingBox:
+  """\
+  Representation class of a 2D axis-aligned bounding box.
+
+  This class provides methods to get and set bounding box properties.
+  """
   def __init__(self):
+    """Constructs a bounding box, initially, unbounded."""
     self.__min = Point( numpy.inf,  numpy.inf)
     self.__max = Point(-numpy.inf, -numpy.inf)
 
-  def reshape(self, points):
+  def expand(self, points):
+    """Expand the bounding box so as to contain the given point set."""
     xmin = self.__min.x
     ymin = self.__min.y
     xmax = self.__max.x
@@ -88,6 +130,7 @@ class BoundingBox:
     self.__max = Point(xmax, ymax)
 
   def scale(self, scale):
+    """Apply a given scale to the bounding box."""
     xmin = self.__min.x
     ymin = self.__min.y
     xmax = self.__max.x
@@ -109,17 +152,21 @@ class BoundingBox:
 
   @property
   def min(self):
+    """Returns the bounding box lower-left corner."""
     return self.__min
   
   @property
   def max(self):
+    """Returns the bounding box upper-right corner."""
     return self.__max
       
-def __det2x2(a00, a01, a10, a11):
+def __det2(a00, a01, a10, a11):
+  """Returns the determinant of a 2x2 matrix."""
   return a00*a11 - a10*a01
 
 def __circumcircle(p, q, r):
-  # compute circumcenter
+  """Computes the circumradius and circumcenter of a non-degenerate \
+    triangle (p,q,r)."""
   x_rp = p.x - r.x
   y_rp = p.y - r.y
   x_rq = q.x - r.x
@@ -131,10 +178,10 @@ def __circumcircle(p, q, r):
   d_rq = x_rq*x_rq + y_rq*y_rq
   d_pq = x_pq*x_pq + y_pq*y_pq
 
-  numx = __det2x2(d_rp, y_rp, d_rq, y_rq)
-  numy = __det2x2(x_rp, d_rp, x_rq, d_rq)
+  numx = __det2(d_rp, y_rp, d_rq, y_rq)
+  numy = __det2(x_rp, d_rp, x_rq, d_rq)
 
-  den = 0.5 / __det2x2(x_rp, y_rp, x_rq, y_rq)
+  den = 0.5 / __det2(x_rp, y_rp, x_rq, y_rq)
 
   c_x = r.x + numx * den
   c_y = r.y + numy * den
@@ -144,31 +191,68 @@ def __circumcircle(p, q, r):
 
   return Point(c_x, c_y), r
 
-# Source: Shewchuk notes on Robust Geometric Predicates
-# https://people.eecs.berkeley.edu/~jrs/meshpapers/robnotes.pdf
 def circumcircle(p, q, r):
+  """\
+  Constructs the circumcircle of the triangle (p,q,r).
+
+  This is an implementation of Schewchuk's formulas for the
+  computation of the circumcenter and circumradius of a triangle.
+
+  Parameters
+  ----------
+    p, q, r : Point, Point, Point
+        Triangle vertices.
+
+  Returns
+  -------
+    center : Point
+      The circumcenter of the triangle (p,q,r).
+    radius : double
+      The circumradius of the triangle (p,q,r).
+
+  References
+  ----------
+  Shewchuk, J. R., Lecture Notes on Robust Geometric Predicates,
+    URL: https://people.eecs.berkeley.edu/~jrs/meshpapers/robnotes.pdf
+  """
   orient = orientation(p, q, r)
-  assert orient != 0 # COLLINEAR
+  assert orient != 0 # not COLLINEAR?
   return __circumcircle(p, q, r)
 
 def orientation(p0: Point, p1: Point, p2: Point, p3 = None):
+  """A wrapper over Schewchuk's predicates."""
   if p3 is None:
     return numpy.sign(gp.orient2d(p0.coords, p1.coords, p2.coords))
   else:
     return numpy.sign(gp.incircle(p0.coords, p1.coords, p2.coords, p3.coords))
   
-# idea borrowed from CGAL
 def __compare(a, b):
+  """Compares two numbers."""
   if (a < b):
     return SMALLER
   if (a > b):
     return LARGER
   return EQUAL
 
-# Source: adapted from CGAL's compare_{x,y}
-# return true if point r is strictly between p and q
-# p, q and r are supposed to be collinear points
 def in_between(p, q, r):
+  """\
+     """
+  """\
+  Check if point `r` is strictly between `p` and `q`.
+
+  This function was adapted from its CGAL's counterpart (compare_{x,y}).
+  Points are supposed to be collinear.
+
+  Parameters
+  ----------
+    p, q, r : Point, Point, Point
+        Collinear points.
+
+  Returns
+  -------
+    True if point `r` is strictly between `p` and `q`.
+    False, otherwise.
+  """
   c_pq = __compare(p.x, q.x)
   c_pr = None
   c_rq = None

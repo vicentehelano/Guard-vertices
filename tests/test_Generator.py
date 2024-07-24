@@ -29,7 +29,7 @@ def testGenerator():
   generate = Generator()
   points = generate.random_points_on_axes(n)
   bbox = BoundingBox()
-  bbox.reshape(points)
+  bbox.expand(points)
   bbox.scale(1.25)
   canvas = Canvas(bbox)
 
@@ -41,7 +41,7 @@ def testGenerator():
 
   points = generate.random_points_in_square(n)
   bbox = BoundingBox()
-  bbox.reshape(points)
+  bbox.expand(points)
   bbox.scale(1.25)
   canvas = Canvas(bbox)
 
@@ -53,7 +53,7 @@ def testGenerator():
 
   points = generate.random_points_in_disc(n)
   bbox = BoundingBox()
-  bbox.reshape(points)
+  bbox.expand(points)
   bbox.scale(1.25)
   canvas = Canvas(bbox)
 
@@ -65,7 +65,7 @@ def testGenerator():
 
   points = generate.random_points_on_parabola(n)
   bbox = BoundingBox()
-  bbox.reshape(points)
+  bbox.expand(points)
   bbox.scale(1.25)
   canvas = Canvas(bbox)
 

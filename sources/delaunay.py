@@ -170,7 +170,7 @@ class DelaunayTriangulation:
 
     # reshaping bounding box
     debug("Updating bounding box.")
-    self.__bbox.reshape(points)
+    self.__bbox.expand(points)
 
   def visual_insert(self, points, with_labels=False):
     """\
@@ -197,7 +197,7 @@ class DelaunayTriangulation:
 
     # reshaping bounding box
     info("Updating bounding box.")
-    self.__bbox.reshape(points)
+    self.__bbox.expand(points)
 
     if self.__canvas is None:
       info("Creating canvas...")
