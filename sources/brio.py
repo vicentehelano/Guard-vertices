@@ -26,11 +26,10 @@ from enum import Enum
 from .log import *
 
 # Sorting methods
-class SortingMethod(Enum):
-  NONE    = 0
-  RANDOM  = 1
-  HILBERT = 2
-  KDTREE  = 3
+BRIO_NONE    = 0
+BRIO_RANDOM  = 1
+BRIO_HILBERT = 2
+BRIO_KDTREE  = 3
 
 # Temporarily, we have only implemented NONE and RANDOM.
 class Brio:
@@ -55,7 +54,7 @@ class Brio:
       Proceedings of the 19th Annual Symposium on Computational geometry,
       p. 211-219, 2003.
   """
-  def __init__(self, method = SortingMethod.RANDOM):
+  def __init__(self, method = BRIO_RANDOM):
     self.__method = method
 
   def __call__(self, points):
@@ -68,9 +67,9 @@ class Brio:
       error("Input container not supported.")
       sys.exit(1)
 
-    if self.__method == SortingMethod.NONE:
+    if self.__method == BRIO_NONE:
       return P
-    if self.__method == SortingMethod.RANDOM:
+    if self.__method == BRIO_RANDOM:
       numpy.random.shuffle(P)
       return P
     
