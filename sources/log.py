@@ -18,17 +18,22 @@ CC0 1.0 Universal for more details.
 Author(s): Vicente Sobrinho <vicente.sobrinho@ufca.edu.br>
 """
 def __log(msg):
+    """Print message to the standard output stream."""
     print(msg)
 
 def debug(msg):
+    """Show debug message in the standard output stream."""
     if __debug__:
         __log("Debug: " + msg)
 
 def info(msg):
+    """Show info message in the standard output stream."""
     __log("Info: " + msg)
 
 def warning(msg):
+    """Show warning message in the standard output stream."""
     __log("Warning: " + msg)
 
 def error(msg):
+    """Show error message in the standard output stream."""
     __log("Error: " + msg)
