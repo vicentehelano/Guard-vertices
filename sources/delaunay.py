@@ -34,7 +34,7 @@ class DelaunayTriangulation:
   """\
   Constructs the Delaunay triangulation of a planar point set.
 
-  This class contains an implementation of the Boywer-Watson algorithm
+  This class contains an implementation of the Bowyer-Watson algorithm
   con BRIO for triangulating planar point sets. It closely follows CGAL's
   Delaunay_triangulation_3 design.
 
@@ -60,28 +60,34 @@ class DelaunayTriangulation:
   >>> t.draw()
   """
   def __init__(self, tds):
-    self.__tds = tds()
-    self.__bbox = BoundingBox()
-    self.__canvas = None
+    """Initializes the DelaunayTriangulation class."""
+    self.__tds = tds() # triangulation data structure
+    self.__bbox = BoundingBox() # triangulation bounding box
+    self.__canvas = None # used when drawing
 
   # ACCESS methods
 
   def vertex(self, i):
+    """Returns a reference to the i-th vertex."""
     return self.__tds.vertex(i)
   
   @property
-  def number_of_vertices(self): # number of vertices, including the infinite one
+  def number_of_vertices(self):
+    """Returns the total number of vertices, including the infinite one."""
     return self.__tds.number_of_vertices
   
   def neighbor(self, i, f):
+    """Returns the neighbor face opposite to the i-th vertex of `f`."""
     return self.__tds.neighbor(i, f)
 
   # PREDICATE methods
 
   def __is_infinite(self, v0, v1 = None, v2 = None):
+    """Returns True, if any vertex in {v0,v1,v2} is infinite. Otherwise, returns False."""
     return self.__tds.is_infinite(v0, v1, v2)
 
   def __all_infinite(self, faces):
+    """Returns True, if all face in `faces` is infinite. Otherwise, returns False."""
     n = 0
     for f in faces:
       if self.__is_infinite(f[0], f[1], f[2]):
@@ -92,16 +98,39 @@ class DelaunayTriangulation:
   # UPDATE methods
 
   def __create_vertex(self):
+    """Insert a new vertex into the `tds` vertices container."""
     self.__tds.create_vertex()
 
   def __insert_face(self, v0, v1, v2):
+    """Insert face `(v0, v1, v2)` into the triangulation data structure."""
     self.__tds.insert_face(v0, v1, v2)
 
   def __remove_face(self, v0, v1, v2):
+    """Remove face `(v0, v1, v2)` from the triangulation data structure."""
     self.__tds.remove_face(v0, v1, v2)
 
   # Bowyer-Watson algoritm con BRIO
   def insert(self, points):
+    """\
+    Insert points into a 2D Delaunay triangulation.
+
+    This method implements the Bowyer-Watson algorithm con BRIO for
+    triangulating planar point sets. It closely follows CGAL's
+    Delaunay_triangulation_3 design.
+
+    Parameters
+    ----------
+      points : random access container (list or numpy.array)
+          Container of 2D points.    
+
+    References
+    ----------
+      [1] Cheng, Siu-Wing, et al. Delaunay mesh generation.
+          Boca Raton: CRC Press, 2013.
+      [2] Clément Jamin and Sylvain Pion and Monique Teillaud. 3D Triangulations.
+          In: CGAL User and Reference Manual. CGAL Editorial Board,
+          version 5.6.1, 2024.
+    """
     assert len(points) >= 3
 
     info('Creating BRIO...')
@@ -143,6 +172,26 @@ class DelaunayTriangulation:
     self.__bbox.reshape(points)
 
   def visual_insert(self, points, with_labels=False):
+    """\
+    Insert points into a 2D Delaunay triangulation with visual debugging.
+
+    This method implements the Bowyer-Watson algorithm con BRIO for
+    triangulating planar point sets. It closely follows CGAL's
+    Delaunay_triangulation_3 design.
+
+    Parameters
+    ----------
+      points : random access container (list or numpy.array)
+          Container of 2D points.    
+
+    References
+    ----------
+      [1] Cheng, Siu-Wing, et al. Delaunay mesh generation.
+          Boca Raton: CRC Press, 2013.
+      [2] Clément Jamin and Sylvain Pion and Monique Teillaud. 3D Triangulations.
+          In: CGAL User and Reference Manual. CGAL Editorial Board,
+          version 5.6.1, 2024.
+    """
     assert len(points) >= 3
 
     # reshaping bounding box
@@ -223,8 +272,7 @@ class DelaunayTriangulation:
   # BOWYER-WATSON internal methods
   
   def __insert_first_three(self, points):
-    """Add first three non-collinear points.
-    """
+    """Insert first three non-collinear points, if any."""
     self.__create_vertex()
     self.__create_vertex()
     self.__create_vertex()
@@ -270,11 +318,13 @@ class DelaunayTriangulation:
     self.vertex(3).set_point(p2)
 
   def __find_conflict(self, p, hint):
+    """Find conflict set and cavity for point `p`."""
     first  = self.__find_first_conflict(p, hint)
-    conflict, cavity = self.__find_other_conflicts(p, first)
+    conflict, cavity = self.__find_more_conflicts(p, first)
     return conflict, cavity
 
   def __in_conflict(self, p: Point, v0: int, v1: int, v2: int):
+    """Check if point `p` is in conflict with face (v0,v1,v2)."""
     if self.__is_infinite(v0, v1, v2):
       # sort vertices to get (v0, v1, v2 = 0), i.e., infinite at last
       face = [v0,v1,v2]
@@ -314,10 +364,13 @@ class DelaunayTriangulation:
         return False
 
   def __find_first_conflict(self, p, hint):
+    """Find first conflicting face with point `p` by walking, starting at face `hint`."""
+    # Always start with a finite face (since it must exists at least one at this point)
     if 0 in hint: # infinite face, find oposite face, which must be finite
       i = hint.index(0)
       hint = self.neighbor(i, hint)
 
+    # Main walking loop
     found = False
     while not found:
       v0 = self.vertex(hint[0])
@@ -328,10 +381,13 @@ class DelaunayTriangulation:
       p1 = v1.point
       p2 = v2.point
 
+      # We use polarization to define a base-3 mask that helps to classify
+      # the position of point `p` with relation to the triangle (p0,p1,p2).
+      # There are 19 valid positions/codes (7 belonging to the triangle and
+      # 12 outside it) and 8 invalid ones.
       e0 = orientation(p0, p1, p) + 1
       e1 = orientation(p1, p2, p) + 1
       e2 = orientation(p2, p0, p) + 1
-
       mask = int(e2*9 + e1*3 + e0)
       
       if mask in [11, 20, 19]: # walk to v0 opposite vertex
@@ -377,7 +433,8 @@ class DelaunayTriangulation:
 
     return hint
 
-  def __find_other_conflicts(self, p, first):
+  def __find_more_conflicts(self, p, first):
+    """Find more conflicting faces with point `p` by inspecting `first`'s neighborhood."""
     conflict = [first]
     cavity = []
     Q = Queue(maxsize = 0) # do we need an infinite size queue?
@@ -408,7 +465,7 @@ class DelaunayTriangulation:
     return conflict, cavity
   
   def __remove_conflict(self, conflict):
-    # remove faces from cavity
+    """Remove faces belonging to the conflict set."""
     for face in conflict:
       v0 = face[0]
       v1 = face[1]
@@ -416,6 +473,7 @@ class DelaunayTriangulation:
       self.__remove_face(v0, v1, v2)
 
   def __fill_cavity(self, p, cavity):
+    """Insert all faces induced by `p` and its cavity."""
     self.__create_vertex()
     v0 = self.number_of_vertices - 1
     for edge in cavity:
@@ -426,17 +484,21 @@ class DelaunayTriangulation:
     self.vertex(v0).set_point(p)
 
   # OUTPUT methods
+
   def print(self):
+    """Writes the triangulation to the standard output stream."""
     self.__tds.print()
 
   def draw_labels(self):
+    """Draw vertex labels over the current active canvas."""
     for i in range(self.number_of_vertices):
       p = self.vertex(i).point
       label = r"$v_{0}$".format(i)
       self.__canvas.draw_label(label, p)
 
-  def draw_conflict(self, cavity):
-    for face in cavity:
+  def draw_conflict(self, conflict):
+    """Draw conflict set over the current active canvas."""
+    for face in conflict:
       iv0 = face[0]
       iv1 = face[1]
       iv2 = face[2]
@@ -447,6 +509,7 @@ class DelaunayTriangulation:
         self.__canvas.draw_triangle(v0.point, v1.point, v2.point, filled=True)
 
   def draw_circumcircles(self, faces):
+    """Draw circumcircles over the current active canvas."""
     circles = []
     for face in faces:
       iv0 = face[0]
@@ -463,6 +526,7 @@ class DelaunayTriangulation:
     self.__canvas.draw_circle(circles)
 
   def draw_cavity(self, cavity):
+    """Draw cavity over the current active canvas."""
     for edge in cavity:
       iv0 = edge[0]
       iv1 = edge[1]
@@ -472,6 +536,7 @@ class DelaunayTriangulation:
         self.__canvas.draw_segment(v0.point, v1.point)
 
   def draw(self, with_labels = False):
+    """Draw the full triangulation over the current active canvas."""
     if self.__canvas is None:
       bbox = copy.deepcopy(self.__bbox)
       bbox.scale(1.25)
@@ -482,6 +547,7 @@ class DelaunayTriangulation:
     self.__canvas.end()
 
   def __draw(self, with_labels):
+    """Helper method to draw a full triangulation."""
     for iv0 in range(1, self.number_of_vertices): # skip infinite vertex
       v0 = self.vertex(iv0)
       for path in v0.links:
