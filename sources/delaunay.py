@@ -46,7 +46,7 @@ class DelaunayTriangulation:
             - vertex(i: int): returns the i-th vertex of `tds`.
             - neighbor(i: int, f: list): returns the i-th neighbor of face `f`.
             - create_vertex(): create a new vertex in `tds`.
-            - insert_face(v0: int, v1: int, v2: int):  insert face (a,b,c) into `tds`.
+            - insert_face(v0: int, v1: int, v2: int):  insert face (v0,v1,v2) into `tds`.
             - remove_face(v0: int, v1: int, v2: int): remove face (v0,v1,v2) from `tds`.
             - is_infinite(v0: int, v1: int, v2: int): check if face (v0,v1,v2) is infinite.
 
@@ -118,13 +118,14 @@ class DelaunayTriangulation:
     for p in points[3:]:
       debug("+-- Inserting point: " + str(p.coords))
 
-      debug("+-- Finding conflict set.")
+      debug("+-- Finding conflict set and cavity.")
       conflict, cavity = self.__find_conflict(p, hint)
       debug("    |-- conflict set: " + str(conflict))
       debug("    |-- cavity: " + str(cavity))
 
       debug("    |-- removing conflict set.")
       self.__remove_conflict(conflict)
+
       debug("    |-- filling cavity.")
       self.__fill_cavity(p, cavity)
 
@@ -141,76 +142,83 @@ class DelaunayTriangulation:
     debug("Updating bounding box.")
     self.__bbox.reshape(points)
 
-  def visual_insert(self, points):
+  def visual_insert(self, points, with_labels=False):
     assert len(points) >= 3
 
     # reshaping bounding box
+    info("Updating bounding box.")
     self.__bbox.reshape(points)
 
     if self.__canvas is None:
-      print("> creating canvas...")
+      info("Creating canvas...")
       bbox = copy.deepcopy(self.__bbox)
       bbox.scale(1.25)
       self.__canvas = Canvas(bbox)
-      print("> done.")
+      info("Canvas ready.")
 
+    info('Creating BRIO...')
     brio = Brio()
     points = brio(points)
+    info('BRIO done.')
 
+    info('Inserting first three points...')
     self.__insert_first_three(points)
-    print('BOOT DONE')
-    self.print()
+    info('First three insertion done.')
 
+    info('Drawing initial triangulation...')
     self.__canvas.begin()
-    self.__draw()
-    print("DESENHO: TRIANGULACAO")
+    self.__draw(with_labels)
     self.__canvas.end()
 
-    hint = [1, 2, 3] # first face
+    info('Inserting remaining points...')
+    hint = [1, 2, 3] # first hint face
     for p in points[3:]:
-      print("  > Inserindo ponto: ", p.coords)
+      info("+-- Inserting point: " + str(p.coords))
       self.__canvas.begin()
       self.__canvas.draw_point(p)
-      print("DESENHO: PONTO")
       self.__canvas.end()
       
+      info("+-- Finding conflict set and cavity.")
       conflict, cavity = self.__find_conflict(p, hint)
-      print("  > conflict: ", conflict)
-      print("  > cavity: ", cavity)
-      print("  > updating cavity...")
+      info("    |-- conflict set: " + str(conflict))
+      info("    |-- cavity: " + str(cavity))
+
+      info("+-- Drawing conflict set and cavity.")
       self.__canvas.begin()
       self.draw_conflict(conflict)
       self.draw_cavity(cavity)
       self.draw_circumcircles(conflict)
       self.__canvas.end()
 
+      info("    |-- removing conflict set.")
       self.__remove_conflict(conflict)
+
       if not self.__all_infinite(conflict):
         self.__canvas.clear()
         self.__canvas.begin()
         self.__canvas.draw_point(p)
         self.draw_conflict(conflict)
         self.draw_cavity(cavity)
-        self.__draw()
+        self.__draw(with_labels)
         self.__canvas.end()
 
+      info("    |-- filling cavity.")
       self.__fill_cavity(p, cavity)
-      print("AFTER CAVITY UPDATE:")
 
-      print("new hint:")
+      info('+-- Drawing updated triangulation...')
+      self.__canvas.clear()
+      self.__canvas.begin()
+      self.__draw(with_labels)
+      self.__canvas.end()
+
+      info("+-- Updating walk hint face...")
       i = self.number_of_vertices - 1
       link = self.vertex(i).links[0]
       hint[0] = i
       hint[1] = link[0]
       hint[2] = link[1]
 
-      self.__canvas.clear()
-      self.__canvas.begin()
-      self.__draw()
-      self.__canvas.end()
-
-    print('INSERTION DONE')
-    self.print()
+    info('Insertion done.')
 
   # BOWYER-WATSON internal methods
   

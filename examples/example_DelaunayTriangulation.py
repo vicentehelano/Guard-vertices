@@ -26,7 +26,7 @@ def exampleBlandford():
 def exampleDelaunayTriangulation():
   Dt = DelaunayTriangulation(LinkVertices)
   points = exampleBlandford()
-  Dt.visual_insert(points)
+  Dt.visual_insert(points, with_labels=True)
 
 if __name__ == '__main__':
   exampleDelaunayTriangulation()
