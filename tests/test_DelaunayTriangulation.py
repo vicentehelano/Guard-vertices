@@ -19,7 +19,7 @@ Author(s): Vicente Sobrinho <vicente.sobrinho@ufca.edu.br>
 """
 import numpy
 
-from sources.utils import Point
+from sources.geometry import Point
 from sources.links import LinkVertices
 from sources.delaunay import DelaunayTriangulation
 

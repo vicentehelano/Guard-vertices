@@ -7,7 +7,7 @@ Tips:
 """
 import numpy
 
-from sources.utils import Point
+from sources.geometry import Point
 from sources.links import LinkVertices
 from sources.delaunay import DelaunayTriangulation
 

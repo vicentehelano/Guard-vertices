@@ -20,7 +20,7 @@ Author(s): Vicente Sobrinho <vicente.sobrinho@ufca.edu.br>
 import numpy
 import random
 
-from .utils import Point
+from .geometry import Point
 
 class Generator:
   """\

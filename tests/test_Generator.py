@@ -20,7 +20,7 @@ Author(s): Vicente Sobrinho <vicente.sobrinho@ufca.edu.br>
 import matplotlib.pyplot as plt
 
 from sources.canvas import Canvas
-from sources.utils import BoundingBox
+from sources.geometry import BoundingBox
 from sources.generators import *
 
 def testGenerator():

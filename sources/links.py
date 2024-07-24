@@ -21,7 +21,8 @@ Author(s): Vicente Sobrinho <vicente.sobrinho@ufca.edu.br>
 import numpy
 
 # Import from local packages
-from .utils import Point, cw, ccw
+from .geometry import Point
+from .utils import cw, ccw
 
 class Vertex:
   """\

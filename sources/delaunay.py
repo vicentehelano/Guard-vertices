@@ -24,11 +24,12 @@ import random
 from queue import Queue
 
 # Local imports
-from .utils import Point, Circle, BoundingBox
-from .utils import orientation, in_between, circumcircle, cw, ccw
-from .canvas import Canvas
 from .brio import Brio
+from .canvas import Canvas
+from .geometry import Point, Circle, BoundingBox
+from .geometry import orientation, in_between, circumcircle
 from .log import *
+from .utils import cw, ccw
 
 class DelaunayTriangulation:
   """\
@@ -329,8 +330,8 @@ class DelaunayTriangulation:
       # sort vertices to get (v0, v1, v2 = 0), i.e., infinite at last
       face = [v0,v1,v2]
       i  = face.index(0)
-      v0 = face[(i+1)%3]
-      v1 = face[(i+2)%3]
+      v0 = face[ccw(i)]
+      v1 = face[cw(i)]
 
       v0 = self.vertex(v0)
       v1 = self.vertex(v1)
