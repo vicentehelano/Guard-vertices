@@ -19,7 +19,11 @@ Author(s): Vicente Sobrinho <vicente.sobrinho@ufca.edu.br>
 """
 import numpy
 import copy
+import sys
 from enum import Enum
+
+# Local imports
+from .log import *
 
 # Sorting methods
 class SortingMethod(Enum):
@@ -30,12 +34,40 @@ class SortingMethod(Enum):
 
 # Temporarily, we have only implemented NONE and RANDOM.
 class Brio:
+  """\
+  Constructs a Biased Randomized Insertion Order (BRIO).
+
+  Currently available BRIOS: None and random shuffle.
+
+  Parameters
+  ----------
+    points : random access container (list or numpy.array)
+        Container of 2D points.
+
+  Returns
+  --------
+    P : numpy.array
+        Container of sorted points.
+
+  References
+  ----------
+    Amenta, N., Choi, S., and Rote, G., Incremental constructions con BRIO.
+      Proceedings of the 19th Annual Symposium on Computational geometry,
+      p. 211-219, 2003.
+  """
   def __init__(self, method = SortingMethod.RANDOM):
     self.__method = method
 
   def __call__(self, points):
-    assert isinstance(points, numpy.ndarray)
-    P = copy.deepcopy(points)
+    P = None
+    if isinstance(points, numpy.ndarray):
+      P = copy.deepcopy(points)
+    elif isinstance(points, list):
+      P = numpy.array(points)
+    else:
+      error("Input container not supported.")
+      sys.exit(1)
+
     if self.__method == SortingMethod.NONE:
       return P
     if self.__method == SortingMethod.RANDOM:
