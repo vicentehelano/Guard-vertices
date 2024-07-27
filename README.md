@@ -1,8 +1,7 @@
 # Guard-vertices
 *A guard-based data structure for triangulations*
 
-This repository is still under development.
-It contains Python implementations of the following data structures for planar triangulations:
+This repository contains Python implementations of the following data structures for planar triangulations:
 1. `guard-vertices` (Batista, 2010)
 2. `link-vertices` (Blandford et al., 2005)
 
