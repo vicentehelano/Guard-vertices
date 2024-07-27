@@ -150,6 +150,23 @@ class GuardVertices:
     """Returns the total number of vertices, including the infinite one."""
     return len(self.__vertices)
   
+  @property
+  def number_of_guards(self): # number of guards
+    """Returns the total number of guard-vertices, including the infinite one."""
+    return sum(1 for v in self.vertices if v.status == GUARD_VERTEX)
+  
+  @property
+  def number_of_ordinaries(self): # number of ordinaries
+    """Returns the total number of ordinary vertices."""
+    return sum(1 for v in self.vertices if v.status == ORDINARY_VERTEX)
+  
+  @property
+  def number_of_references(self): # number of references
+    """Returns the total number of references."""
+    references  = sum(len(sum(v.links, [])) for v in self.vertices if v.status == GUARD_VERTEX)
+    references += sum(len(v.guards) for v in self.vertices if v.status == ORDINARY_VERTEX)
+    return references
+  
   def neighbor(self, i, f):
     """Returns the neighbor face opposite to the i-th vertex of `f`."""
     return self.__find_up(f[cw(i)], f[ccw(i)])
@@ -245,7 +262,7 @@ class GuardVertices:
       if v1 is not None: # edge (v0,v1) defined, return oriented face (v0,v1,v2), if any
         if v.status == GUARD_VERTEX:
           return self.__find_up_guard(v0,v1)
-        else: # v.status = ORDINARY_VERTEX:
+        else: # v.status == ORDINARY_VERTEX:
           return self.__find_up_ordinary(v0,v1)
       else: # return any edge (v0,v1)
         if v.status == GUARD_VERTEX:
@@ -276,15 +293,22 @@ class GuardVertices:
     """Insert a new vertex at the end of the vertices container."""
     self.vertices.append(Vertex())
 
-  # eventually, with DUPLICATE faces, shared by adjacent guards
+  # the first vertex of each incident face is always vertex `a`
   def __incident_faces_to_ordinary(self,a):
-    faces = []
+    all_around = [] # all faces incident to neighbor guards
     for g in self.vertex(a).guards:
       debug("  > Vertex %d has GUARD %d" % (a,g))
-      f = self.__incident_faces_to_guard(g)
-      faces.extend(f)
-    
-    return faces
+      faces = self.__incident_faces_to_guard(g)
+      all_around.extend(faces)
+
+    # Filter `all_around` that have `a` as a vertex
+    incidents = set()
+    for face in all_around:
+      if a in face:
+        i = face.index(a)
+        incidents.add((face[i], face[ccw(i)], face[cw(i)]))
+
+    return incidents
 
   # we suppose a is a vertex
   # TODO: add an assertion?
@@ -330,31 +354,28 @@ class GuardVertices:
     debug("Inserting face (%d, %d, %d)" % (v0,v1,v2))
     # Check if face is guarded.
     # Otherwise, set any of its vertices as guard.
-    # at this time, we choose at random.
     status = self.vertex(v0).status | \
              self.vertex(v1).status | \
              self.vertex(v2).status
     
     if status == UNGUARDED_FACE:
-      # create a new guard at random
+      # choose the NEW guard at random
+      # TODO: soon, test greedy and other criteria.
       i = random.choice([v0,v1,v2])
 
-      # insert existing faces incident into vertex `i`, the new guard
-      incidents = self.incident_faces(i)
-      debug("  | incident faces:" + str(incidents))
-      
+      # collect faces incident to guards of vertex `i`
+      faces = self.incident_faces(i)
+      debug("  | incident faces:" + str(list(faces)))
+
+      # we can only set its status at this moment,
+      # after collecting its incident faces      
       debug("Make vertex %d a GUARD." % i)
       self.vertex(i).set_status(GUARD_VERTEX)
 
-      faces = set()
-      for f in incidents:
-        if i in f:
-          j = f.index(i)
-          faces.add((f[j], f[ccw(j)], f[cw(j)]))
-
+      # insert incident faces to `a` link set
       for f in faces:
         debug("  | inserting face: (%d, %d, %d)" % (f[0], f[1], f[2]))
-        self.__insert_face_in_guard(f[0], f[1], f[2])
+        self.__insert_face_into_guard(f[0], f[1], f[2])
 
       # vertex `i` is now a guard, clear its old guard set
       self.vertex(i).guards.clear()
@@ -362,7 +383,9 @@ class GuardVertices:
       # Now, add the new guard to its ordinary neighbors
       neighbors = set(sum(self.vertex(i).links, []))
       for n in neighbors:
-        self.vertex(n).guards.add(i)
+        v = self.vertex(n)
+        if v.status == ORDINARY_VERTEX:
+          v.guards.add(i)
     else:
       debug("face already GUARDED!")
 
@@ -391,12 +414,12 @@ class GuardVertices:
     """
     debug("++ Updating link of vertex %d." % v0)
     if self.vertex(v0).status == ORDINARY_VERTEX:
-      self.__insert_face__in_ordinary(v0,v1,v2)
+      self.__insert_face_into_ordinary(v0,v1,v2)
     else: # self.vertex(v0).status == GUARD_VERTEX:
-      self.__insert_face_in_guard(v0,v1,v2)
+      self.__insert_face_into_guard(v0,v1,v2)
 
   # Here, `v0` MUST be ordinary
-  def __insert_face__in_ordinary(self, v0, v1, v2):
+  def __insert_face_into_ordinary(self, v0, v1, v2):
     """\
     Insert in-place face `(v0, v1, v2)` into the link of vertex `v0`.
 
@@ -425,7 +448,7 @@ class GuardVertices:
       guards.add(v2)
 
   # Here, `v0` MUST be a guard
-  def __insert_face_in_guard(self, v0, v1, v2):
+  def __insert_face_into_guard(self, v0, v1, v2):
     """\
     Insert in-place face `(v0, v1, v2)` into the link of vertex `v0`.
 
@@ -564,9 +587,13 @@ class GuardVertices:
     ----------
       empty : empty
     """
-    print('> links:')
+    print('> Triangulation:')
     for i in range(self.number_of_vertices):
       if self.vertex(i).status == GUARD_VERTEX:
         print(self.vertex(i).links)
       else:
         print(list(self.vertex(i).guards))
+    print("> Number of vertices: ", self.number_of_vertices)
+    print("> Number of guards: ", self.number_of_guards)
+    print("> Number of ordinaries: ", self.number_of_ordinaries)
+    print("> Number of references: ", self.number_of_references)
