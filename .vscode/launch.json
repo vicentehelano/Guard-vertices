@@ -11,6 +11,12 @@
             "module": "tests.test_LinkVertices"
         },
         {
+            "name": "Test: GuardVertices",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "tests.test_GuardVertices"
+        },
+        {
             "name": "Test: DelaunayTriangulation",
             "type": "debugpy",
             "request": "launch",
