@@ -523,12 +523,38 @@ class GuardVertices:
         two and three dimensions. International Journal of Computational
         Geometry & Applications, v. 15, n. 1, p. 3-24, 2005.
     """
-    self.__remove_face(v0, v1, v2)
-    self.__remove_face(v1, v2, v0)
-    self.__remove_face(v2, v0, v1)
+    # First, remove face from guards
+    ordinaries = []
+    f = [v0, v1, v2]
+    for i in range(3):
+      if self.vertex(f[i]).status == GUARD_VERTEX:
+        self.__remove_face_from_guard(f[i], f[ccw(i)], f[cw(i)])
+      else: 
+        ordinaries.append(i)
+
+    # Second, update all ordinary guard sets
+    for i in ordinaries:
+      self.__update_guard_set(f[i])
+
+  # v0 MUST be ordinary
+  def __update_guard_set(self, v0):
+    inactive = [] # we must remove any inactive guard
+    for g in self.vertex(v0).guards:
+      # this guard might be deactivated, check it out
+      if self.vertex(g).status == GUARD_VERTEX:
+        debug("  > Vertex %d has GUARD %d" % (a,g))
+        for path in self.vertex(g).links:
+          if v0 in path:
+            guarded
+      else:
+        to_remove.append(g)
+
+    # remove all deactivated guards
+    
+
 
   
-  def __remove_face(self, v0, v1, v2):
+  def __remove_face_from_guard(self, v0, v1, v2):
     """\
     Remove in-place face `(v0, v1, v2)` from the link set of vertex `v0`.
 
@@ -573,6 +599,12 @@ class GuardVertices:
         links.insert(p1,first)
       if len(latest) > 1:
         links.insert(p1+1,latest)
+
+    # If link set is empty, make it ordinary
+    if len(links) == 0:
+      self.vertex(v0).set_status(ORDINARY_VERTEX)
+      self.vertex(v0).links.clear()
+
 
   # OUTPUT methods
 
