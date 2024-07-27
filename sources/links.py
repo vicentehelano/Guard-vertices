@@ -122,6 +122,27 @@ class LinkVertices:
   def neighbor(self, i, f):
     """Returns the neighbor face opposite to the i-th vertex of `f`."""
     return self.__find_up(f[cw(i)], f[ccw(i)])
+  
+  def incident_faces(self,a):
+    """Returns all incident faces to vertex `i`."""
+    faces = []
+    for path in self.vertex(a).links:
+      for i in range(len(path)-1):
+        b = path[i]
+        c = path[i+1]
+        faces.append( (a, b, c) )
+    
+    return faces
+  
+  def incident_face(self,a):
+    """Returns a single (any) incident face to vertex `i`."""
+    for path in self.vertex(a).links:
+      for i in range(len(path)-1):
+        b = path[i]
+        c = path[i+1]
+        return (a, b, c)
+
+    return None
 
   def __find_up(self, v0, v1=None):
     """\

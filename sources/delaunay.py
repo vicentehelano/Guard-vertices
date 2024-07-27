@@ -161,10 +161,7 @@ class DelaunayTriangulation:
 
       debug("    |-- updating walk hint face.")
       i = self.number_of_vertices - 1
-      link = self.vertex(i).links[0]
-      hint[0] = i
-      hint[1] = link[0]
-      hint[2] = link[1]
+      hint = self.__tds.incident_face(i)
 
     info('Insertion done.')
 
@@ -263,10 +260,7 @@ class DelaunayTriangulation:
 
       info("+-- Updating walk hint face...")
       i = self.number_of_vertices - 1
-      link = self.vertex(i).links[0]
-      hint[0] = i
-      hint[1] = link[0]
-      hint[2] = link[1]
+      hint = self.__tds.incident_face(i)
 
     info('Insertion done.')
 
@@ -550,14 +544,12 @@ class DelaunayTriangulation:
   def __draw(self, with_labels):
     """Helper method to draw a full triangulation."""
     for iv0 in range(1, self.number_of_vertices): # skip infinite vertex
-      v0 = self.vertex(iv0)
-      for path in v0.links:
-        for j in range(len(path)-1):
-          iv1 = path[j]
-          iv2 = path[j+1]
-          if not self.__is_infinite(iv0, iv1, iv2):
-            v1 = self.vertex(iv1)
-            v2 = self.vertex(iv2)
+      faces = self.__tds.incident_faces(iv0)
+      for f in faces:
+        if not self.__is_infinite(f[0], f[1], f[2]):
+            v0 = self.vertex(f[0])
+            v1 = self.vertex(f[1])
+            v2 = self.vertex(f[2])
             self.__canvas.draw_triangle(v0.point, v1.point, v2.point, filled=False)
     if with_labels:
       self.draw_labels()

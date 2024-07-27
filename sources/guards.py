@@ -201,9 +201,11 @@ class GuardVertices:
   def __find_up_ordinary(self, v0, v1):
     v2 = None
     guards = self.vertex(v0).guards
+    debug("    > my guards: " + str(guards))
     for vg in guards:
       i0 = p0 = None
       links = self.vertex(vg).links
+      debug("      > link set of my guards: " + str(links))
       # get the path and index of v0
       for index, path in enumerate(links):
         if v0 in path:
@@ -211,15 +213,28 @@ class GuardVertices:
           p0 = index
           break
 
+      debug("        > path %d and index %d." %(p0, i0) )
+
       link = self.vertex(vg).links[p0]
 
       if vg == v1:
-        if i0 > 0: # there is a previous vertex in this path
-          v2 = link[i0 - 1]
+        # closed paths always have previous vertex
+        if link[0] == link[-1]:
+          if i0 == 0:
+            v2 = link[i0 - 2]
+          else:
+            v2 = link[i0 - 1]
+        else: # open path
+          if i0 > 0: # there is a previous vertex
+            v2 = link[i0 - 1]
+          else:
+            debug("There is NO previous vertex.")
       else:
-        if (i0 + 1) < len(link): # there is a previous vertex in this path
+        if (i0 + 1) < len(link): # there is a next vertex in this path
           if link[i0+1] == v1:
             v2 = vg
+        else:
+          debug("There is NO next vertex.")
 
     if v2 is None:
       error("Missing face.")
@@ -257,12 +272,18 @@ class GuardVertices:
         two and three dimensions. International Journal of Computational
         Geometry & Applications, v. 15, n. 1, p. 3-24, 2005.
     """
+    debug("  | find_up edge (%d, %d)" % (v0, v1))
+    debug("  | v0.status = %d" % self.vertex(v0).status)
+    debug("  | v1.status = %d" % self.vertex(v1).status)
+    
     if v0 is not None:
       v = self.vertex(v0)
       if v1 is not None: # edge (v0,v1) defined, return oriented face (v0,v1,v2), if any
         if v.status == GUARD_VERTEX:
+          debug("  | find_up GUARD")
           return self.__find_up_guard(v0,v1)
         else: # v.status == ORDINARY_VERTEX:
+          debug("  | find_up ORDINARY")
           return self.__find_up_ordinary(v0,v1)
       else: # return any edge (v0,v1)
         if v.status == GUARD_VERTEX:
@@ -323,6 +344,7 @@ class GuardVertices:
     return faces
 
   def incident_faces(self,a):
+    """Returns all incident faces to vertex `i`."""
     v = self.vertex(a)
     if v.status == GUARD_VERTEX:
       debug("  > incident faces of GUARD")
@@ -330,6 +352,44 @@ class GuardVertices:
     else:
       debug("  > incident faces of ORDINARY")
       return self.__incident_faces_to_ordinary(a)
+    
+  # the first vertex of each incident face is always vertex `a`
+  def __incident_face_to_ordinary(self,a):
+    all_around = [] # all faces incident to neighbor guards
+    for g in self.vertex(a).guards:
+      debug("  > Vertex %d has GUARD %d" % (a,g))
+      faces = self.__incident_faces_to_guard(g)
+      all_around.extend(faces)
+
+    # Filter `all_around` that have `a` as a vertex
+    for face in all_around:
+      if a in face:
+        i = face.index(a)
+        return (face[i], face[ccw(i)], face[cw(i)])
+
+    return None
+
+  # we suppose a is a vertex
+  # TODO: add an assertion?
+  def __incident_face_to_guard(self,a):
+    for path in self.vertex(a).links:
+      for i in range(len(path)-1):
+        b = path[i]
+        c = path[i+1]
+        return (a, b, c)
+    
+    return None
+
+  # return any face incident to vertex `a`, if it exists.  
+  def incident_face(self,a):
+    """Returns a single (any) incident face to vertex `i`."""
+    v = self.vertex(a)
+    if v.status == GUARD_VERTEX:
+      debug("  > incident faces of GUARD")
+      return self.__incident_face_to_guard(a)
+    else:
+      debug("  > incident faces of ORDINARY")
+      return self.__incident_face_to_ordinary(a)
 
   def insert_face(self, v0, v1, v2):
     """\
@@ -361,7 +421,7 @@ class GuardVertices:
     if status == UNGUARDED_FACE:
       # choose the NEW guard at random
       # TODO: soon, test greedy and other criteria.
-      i = random.choice([v0,v1,v2])
+      i = v0#random.choice([v0,v1,v2])
 
       # collect faces incident to guards of vertex `i`
       faces = self.incident_faces(i)
@@ -540,20 +600,23 @@ class GuardVertices:
   def __update_guard_set(self, v0):
     inactive = [] # we must remove any inactive guard
     for g in self.vertex(v0).guards:
-      # this guard might be deactivated, check it out
+      # this guard might be inactive, check it out
       if self.vertex(g).status == GUARD_VERTEX:
-        debug("  > Vertex %d has GUARD %d" % (a,g))
+        debug("  > Vertex %d might have GUARD %d" % (v0,g))
+        guarding = False
         for path in self.vertex(g).links:
           if v0 in path:
-            guarded
+            guarding = True
+            break
+        
+        if not guarding:
+          inactive.append(g)
       else:
-        to_remove.append(g)
+        inactive.append(g)
 
-    # remove all deactivated guards
+    # remove all inactive guards
+    self.vertex(v0).guards.difference_update(set(inactive))
     
-
-
-  
   def __remove_face_from_guard(self, v0, v1, v2):
     """\
     Remove in-place face `(v0, v1, v2)` from the link set of vertex `v0`.
@@ -600,11 +663,11 @@ class GuardVertices:
       if len(latest) > 1:
         links.insert(p1+1,latest)
 
-    # If link set is empty, make it ordinary
-    if len(links) == 0:
-      self.vertex(v0).set_status(ORDINARY_VERTEX)
-      self.vertex(v0).links.clear()
-
+    # If link set is empty, make it ordinary (except, for the infinite vertex)
+    if not self.is_infinite(v0):
+      if len(links) == 0:
+        self.vertex(v0).set_status(ORDINARY_VERTEX)
+        self.vertex(v0).links.clear()
 
   # OUTPUT methods
 
