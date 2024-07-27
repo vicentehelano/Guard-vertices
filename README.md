@@ -1,9 +1,12 @@
 # Guard-vertices
 *A guard-based data structure for triangulations*
 
-This repository is under development.
-It will contain a Python implementation of a compact data structure for planar triangulations using the concept of vertex-guards due to Batista (2010).
-At the moment, we have only an uncompressed implementation of Blandford et al. (2005) data structure.
+This repository is still under development.
+It contains Python implementations of the following data structures for planar triangulations:
+1. `guard-vertices` (Batista, 2010)
+2. `link-vertices` (Blandford et al., 2005)
+
+Soon, we will implement the traditional face-based data structure used by CGAL and do a thorough experimental evaluation of them all.
 
 ## References
 
