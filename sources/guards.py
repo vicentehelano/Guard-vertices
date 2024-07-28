@@ -392,7 +392,6 @@ class GuardVertices:
 
     # insert incident faces to `g` link set
     for f in faces:
-      print(f)
       self.__insert_face_into_guard(f[0], f[1], f[2])
 
     # Now, broadcast the new guard to its ordinary neighbors
