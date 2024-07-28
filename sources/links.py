@@ -23,6 +23,7 @@ import numpy
 # Import from local packages
 from .geometry import Point
 from .utils import cw, ccw
+from .log import *
 
 class Vertex:
   """\
@@ -119,31 +120,15 @@ class LinkVertices:
     """Returns the total number of vertices, including the infinite one."""
     return len(self.__vertices)
   
+  @property
+  def number_of_references(self): # number of references
+    """Returns the total number of references."""
+    return sum(len(sum(v.links, [])) for v in self.vertices)
+  
   def neighbor(self, i, f):
     """Returns the neighbor face opposite to the i-th vertex of `f`."""
     return self.__find_up(f[cw(i)], f[ccw(i)])
   
-  def incident_faces(self,a):
-    """Returns all incident faces to vertex `i`."""
-    faces = []
-    for path in self.vertex(a).links:
-      for i in range(len(path)-1):
-        b = path[i]
-        c = path[i+1]
-        faces.append( (a, b, c) )
-    
-    return faces
-  
-  def incident_face(self,a):
-    """Returns a single (any) incident face to vertex `i`."""
-    for path in self.vertex(a).links:
-      for i in range(len(path)-1):
-        b = path[i]
-        c = path[i+1]
-        return (a, b, c)
-
-    return None
-
   def __find_up(self, v0, v1=None):
     """\
     Returns an ordered simplex with the given ordered sub-simplex.
@@ -171,9 +156,9 @@ class LinkVertices:
         Geometry & Applications, v. 15, n. 1, p. 3-24, 2005.
     """
     if v0 is not None:
+      links = self.vertex(v0).links
       if v1 is not None: # edge (v0,v1) defined, return oriented face (v0,v1,v2)
         i1 = p1 = None
-        links = self.vertex(v0).links
         # get the path and index of v1
         for index, path in enumerate(links):
           if v1 in path:
@@ -181,7 +166,7 @@ class LinkVertices:
             p1 = index
             break
 
-        link = self.vertex(v0).links[p1]
+        link = links[p1]
         last = len(link) - 1
          
          # If link[i1] == link[last], we must have i1 != last indicating a closed link,
@@ -194,12 +179,24 @@ class LinkVertices:
         v2 = link[i1+1]
         return v0, v1, v2
       else: # return any edge (v0,v1)
-        link = self.vertex(v0).links[0]
+        link = links[0]
         return v0, link[0]
     else: # error
+      warning("Cannot find up undefined vertex.")
       return None
     
-  # PREDICATE methods
+  def incident_faces(self, a):
+    """Returns all incident faces to vertex `a`."""
+    faces = []
+    for path in self.vertex(a).links:
+      for i in range(len(path)-1):
+        b = path[i]
+        c = path[i+1]
+        faces.append( (a, b, c) )
+    
+    return faces
+    
+  # QUERY methods
     
   def is_infinite(self, v0, v1 = None, v2 = None):
     """Returns True, if any vertex in {v0,v1,v2} is infinite."""
@@ -316,7 +313,6 @@ class LinkVertices:
     self.__remove_face(v0, v1, v2)
     self.__remove_face(v1, v2, v0)
     self.__remove_face(v2, v0, v1)
-
   
   def __remove_face(self, v0, v1, v2):
     """\
@@ -341,10 +337,10 @@ class LinkVertices:
         p2 = index
 
     # face must exist
-    assert (i1 is not None) and (i2 is not None), "Face does not exist"
+    assert (i1 is not None) and (i2 is not None), "Cannot remove missing face."
 
     # both neighbors must be in the same path
-    assert p1 == p2, "Face does not exist"
+    assert p1 == p2, "Cannot remove missing face."
 
     begin  = links[p1][0]
     end    = links[p1][-1]
@@ -377,6 +373,21 @@ class LinkVertices:
     ----------
       empty : empty
     """
-    print('> links:')
+    print('Triangulation:')
     for i in range(self.number_of_vertices):
       print(self.vertex(i).links)
+
+  def statistics(self):
+    """\
+    Writes to the standard output stream the link sets of all vertices.
+
+    The triangulation data structure is not supposed to have an undelying
+    geometry. So, it outputs only the connectivity.
+
+    Parameters
+    ----------
+      empty : empty
+    """
+    print('Statistics:')
+    print("  > Number of vertices: ", self.number_of_vertices)
+    print("  > Number of references: ", self.number_of_references)

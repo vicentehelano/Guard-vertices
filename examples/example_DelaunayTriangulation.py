@@ -9,6 +9,7 @@ import numpy
 
 from sources.geometry import Point
 from sources.links import LinkVertices
+from sources.guards import GuardVertices
 from sources.delaunay import DelaunayTriangulation
 
 def exampleBlandford():
@@ -24,7 +25,9 @@ def exampleBlandford():
   return numpy.array(points)
 
 def exampleDelaunayTriangulation():
-  Dt = DelaunayTriangulation(LinkVertices)
+  # Choose the data scructure you want
+  Dt = DelaunayTriangulation(GuardVertices)
+  #Dt = DelaunayTriangulation(LinkVertices)
   points = exampleBlandford()
   Dt.visual_insert(points, with_labels=True)
 

@@ -46,6 +46,7 @@ class DelaunayTriangulation:
           least the following methods:
             - vertex(i: int): returns the i-th vertex of `tds`.
             - neighbor(i: int, f: list): returns the i-th neighbor of face `f`.
+            - incident_faces(i: int): returns all incident faces to vertex `i`.
             - create_vertex(): create a new vertex in `tds`.
             - insert_face(v0: int, v1: int, v2: int):  insert face (v0,v1,v2) into `tds`.
             - remove_face(v0: int, v1: int, v2: int): remove face (v0,v1,v2) from `tds`.
@@ -80,8 +81,12 @@ class DelaunayTriangulation:
   def neighbor(self, i, f):
     """Returns the neighbor face opposite to the i-th vertex of `f`."""
     return self.__tds.neighbor(i, f)
+  
+  def incident_faces(self, i):
+    """Returns all incident faces to vertex `i`."""
+    return self.__tds.incident_faces(i)
 
-  # PREDICATE methods
+  # QUERY methods
 
   def __is_infinite(self, v0, v1 = None, v2 = None):
     """Returns True, if any vertex in {v0,v1,v2} is infinite. Otherwise, returns False."""
@@ -160,8 +165,7 @@ class DelaunayTriangulation:
       self.__fill_cavity(p, cavity)
 
       debug("    |-- updating walk hint face.")
-      i = self.number_of_vertices - 1
-      hint = self.__tds.incident_face(i)
+      hint = self.__get_walk_hint()
 
     info('Insertion done.')
 
@@ -259,8 +263,7 @@ class DelaunayTriangulation:
       self.__canvas.end()
 
       info("+-- Updating walk hint face...")
-      i = self.number_of_vertices - 1
-      hint = self.__tds.incident_face(i)
+      hint = self.__get_walk_hint()
 
     info('Insertion done.')
 
@@ -478,11 +481,20 @@ class DelaunayTriangulation:
     
     self.vertex(v0).set_point(p)
 
+  # start at any face incident to the last inserted vertex.
+  def __get_walk_hint(self):
+    i = self.number_of_vertices - 1
+    return next(iter( self.incident_faces(i) ))
+
   # OUTPUT methods
 
   def print(self):
     """Writes the triangulation to the standard output stream."""
     self.__tds.print()
+
+  def statistics(self):
+    """Writes triangulation statistics to the standard output stream."""
+    self.__tds.statistics()
 
   def draw_labels(self):
     """Draw vertex labels over the current active canvas."""
@@ -544,7 +556,7 @@ class DelaunayTriangulation:
   def __draw(self, with_labels):
     """Helper method to draw a full triangulation."""
     for iv0 in range(1, self.number_of_vertices): # skip infinite vertex
-      faces = self.__tds.incident_faces(iv0)
+      faces = self.incident_faces(iv0)
       for f in faces:
         if not self.__is_infinite(f[0], f[1], f[2]):
             v0 = self.vertex(f[0])

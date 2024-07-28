@@ -53,6 +53,7 @@ def testGuardVertices():
 
   print("BEFORE REMOVE")
   t.print()
+  t.statistics()
 
   # remove algumas faces para testar
   # infinite faces
@@ -77,6 +78,7 @@ def testGuardVertices():
 
   print("AFTER REMOVE")
   t.print()
+  t.statistics()
 
 if __name__ == '__main__':
   testGuardVertices()

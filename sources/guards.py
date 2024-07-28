@@ -119,13 +119,9 @@ class GuardVertices:
 
   References
   ----------
-    [1] Batista, V. H. F., Transversais de triângulos e suas aplicações em
+    Batista, V. H. F., Transversais de triângulos e suas aplicações em
       triangulações. PhD thesis, Universidade Federal do Rio de Janeiro, COPPE,
       Civil Engineering Program, 2010.
-
-    [2] Blandford, D. K. et al., Compact representations of simplicial meshes in
-      two and three dimensions. International Journal of Computational
-      Geometry & Applications, v. 15, n. 1, p. 3-24, 2005.
   """
   def __init__(self):
     """Initializes the GuardVertices class."""
@@ -166,81 +162,10 @@ class GuardVertices:
     references  = sum(len(sum(v.links, [])) for v in self.vertices if v.status == GUARD_VERTEX)
     references += sum(len(v.guards) for v in self.vertices if v.status == ORDINARY_VERTEX)
     return references
-  
+    
   def neighbor(self, i, f):
     """Returns the neighbor face opposite to the i-th vertex of `f`."""
     return self.__find_up(f[cw(i)], f[ccw(i)])
-  
-  # v0 MUST be a guard
-  # TODO: add assertion to check this
-  # guards are bare link-vertices, proceed as in BBKC
-  def __find_up_guard(self, v0, v1):
-    i1 = p1 = None
-    links = self.vertex(v0).links
-    # get the path and index of v1
-    for index, path in enumerate(links):
-      if v1 in path:
-        i1 = path.index(v1)
-        p1 = index
-        break
-
-    link = self.vertex(v0).links[p1]
-    last = len(link) - 1
-      
-      # If link[i1] == link[last], we must have i1 != last indicating a closed link,
-      # because 'index()' always return first occurrence, so i1 < last.
-      # Thus, if i1 == last, we have an open link.
-      # So, there is no 'v2' such that (v0,v1,v2) is a face
-    if i1 == last:
-      return None
-
-    v2 = link[i1+1]
-    return v0, v1, v2
-
-  # v0 MUST be ordinary
-  def __find_up_ordinary(self, v0, v1):
-    v2 = None
-    guards = self.vertex(v0).guards
-    debug("    > my guards: " + str(guards))
-    for vg in guards:
-      i0 = p0 = None
-      links = self.vertex(vg).links
-      debug("      > link set of my guards: " + str(links))
-      # get the path and index of v0
-      for index, path in enumerate(links):
-        if v0 in path:
-          i0 = path.index(v0)
-          p0 = index
-          break
-
-      debug("        > path %d and index %d." %(p0, i0) )
-
-      link = self.vertex(vg).links[p0]
-
-      if vg == v1:
-        # closed paths always have previous vertex
-        if link[0] == link[-1]:
-          if i0 == 0:
-            v2 = link[i0 - 2]
-          else:
-            v2 = link[i0 - 1]
-        else: # open path
-          if i0 > 0: # there is a previous vertex
-            v2 = link[i0 - 1]
-          else:
-            debug("There is NO previous vertex.")
-      else:
-        if (i0 + 1) < len(link): # there is a next vertex in this path
-          if link[i0+1] == v1:
-            v2 = vg
-        else:
-          debug("There is NO next vertex.")
-
-    if v2 is None:
-      error("Missing face.")
-      return None
-
-    return (v0, v1, v2)
 
   def __find_up(self, v0, v1=None):
     """\
@@ -272,31 +197,133 @@ class GuardVertices:
         two and three dimensions. International Journal of Computational
         Geometry & Applications, v. 15, n. 1, p. 3-24, 2005.
     """
-    debug("  | find_up edge (%d, %d)" % (v0, v1))
-    debug("  | v0.status = %d" % self.vertex(v0).status)
-    debug("  | v1.status = %d" % self.vertex(v1).status)
-    
     if v0 is not None:
       v = self.vertex(v0)
       if v1 is not None: # edge (v0,v1) defined, return oriented face (v0,v1,v2), if any
         if v.status == GUARD_VERTEX:
-          debug("  | find_up GUARD")
           return self.__find_up_guard(v0,v1)
-        else: # v.status == ORDINARY_VERTEX:
-          debug("  | find_up ORDINARY")
+        else: # ORDINARY_VERTEX
           return self.__find_up_ordinary(v0,v1)
       else: # return any edge (v0,v1)
         if v.status == GUARD_VERTEX:
           link = v.links[0]
           return v0, link[0]
-        else: # v.status == ORDINARY_VERTEX:
+        else: # ORDINARY_VERTEX
           guard = v.guards[0]
           return v0, guard[0]
     else: # error
-      error("Undefined vertex `v0`.")
+      warning("Cannot find up undefined vertex.")
       return None
+
+  # guards are bare link-vertices, proceed as for LinkVertices.
+  def __find_up_guard(self, v0, v1):
+    assert self.vertex(v0).status == GUARD_VERTEX
+
+    i1 = p1 = None
+    links = self.vertex(v0).links
+    # get the path and index of v1
+    for index, path in enumerate(links):
+      if v1 in path:
+        i1 = path.index(v1)
+        p1 = index
+        break
+
+    link = links[p1]
+    last = len(link) - 1
+      
+    # If link[i1] == link[last], we must have i1 != last indicating a closed link,
+    # because 'index()' always return first occurrence, so i1 < last.
+    # Thus, if i1 == last, we have an open link.
+    # So, there is no 'v2' such that (v0,v1,v2) is a face
+    if i1 == last:
+      return None
+
+    v2 = link[i1+1]
+    return v0, v1, v2
+
+  def __find_up_ordinary(self, v0, v1):
+    assert self.vertex(v0).status == ORDINARY_VERTEX
+
+    v2 = None
+    guards = self.vertex(v0).guards
+    for vg in guards:
+      i0 = p0 = None
+      links = self.vertex(vg).links
+      # get the path and index of v0
+      for index, path in enumerate(links):
+        if v0 in path:
+          i0 = path.index(v0)
+          p0 = index
+          break
+
+      link = self.vertex(vg).links[p0]
+
+      if vg == v1:
+        # closed paths always have previous vertex
+        if link[0] == link[-1]:
+          if i0 == 0:
+            v2 = link[i0 - 2]
+          else:
+            v2 = link[i0 - 1]
+        else: # open path
+          if i0 > 0: # there is a previous vertex
+            v2 = link[i0 - 1]
+          else:
+            warning("There is NO previous vertex.")
+      else:
+        if (i0 + 1) < len(link): # there is a next vertex in this path
+          if link[i0+1] == v1:
+            v2 = vg
+        else:
+          warning("There is NO next vertex.")
+
+    if v2 is None:
+      warning("Cannot find neighbor face.")
+      return None
+
+    return (v0, v1, v2)
+
+  def incident_faces(self, a):
+    """Return all incident faces to vertex `a`."""
+    v = self.vertex(a)
+    if v.status == GUARD_VERTEX:
+      return self.__incident_faces_to_guard(a)
+    else: # ORDINARY_VERTEX
+      return self.__incident_faces_to_ordinary(a)
     
-  # PREDICATE methods
+  def __incident_faces_to_guard(self, a):
+    """Return all incident faces to guard vertex `a`."""
+    assert self.vertex(a).status == GUARD_VERTEX
+
+    faces = []
+    for path in self.vertex(a).links:
+      for i in range(len(path)-1):
+        b = path[i]
+        c = path[i+1]
+        faces.append( (a, b, c) )
+    
+    return faces
+
+  # we sort face vertices so as the first vertex of each incident
+  # face is always vertex `a` itself.
+  def __incident_faces_to_ordinary(self, a):
+    """Return all incident faces to ordinary vertex `a`."""
+    assert self.vertex(a).status == ORDINARY_VERTEX
+    all_around = [] # all faces incident to neighbor guards
+    for g in self.vertex(a).guards:
+      faces = self.__incident_faces_to_guard(g)
+      all_around.extend(faces)
+
+    # Filter `all_around` that have `a` as a vertex
+    incidents = set()
+    for face in all_around:
+      if a in face:
+        i = face.index(a)
+        incidents.add((face[i], face[ccw(i)], face[cw(i)]))
+
+    return incidents
+
+  # QUERY methods
     
   def is_infinite(self, v0, v1 = None, v2 = None):
     """Returns True, if any vertex in {v0,v1,v2} is infinite."""
@@ -313,83 +340,6 @@ class GuardVertices:
   def create_vertex(self):
     """Insert a new vertex at the end of the vertices container."""
     self.vertices.append(Vertex())
-
-  # the first vertex of each incident face is always vertex `a`
-  def __incident_faces_to_ordinary(self,a):
-    all_around = [] # all faces incident to neighbor guards
-    for g in self.vertex(a).guards:
-      debug("  > Vertex %d has GUARD %d" % (a,g))
-      faces = self.__incident_faces_to_guard(g)
-      all_around.extend(faces)
-
-    # Filter `all_around` that have `a` as a vertex
-    incidents = set()
-    for face in all_around:
-      if a in face:
-        i = face.index(a)
-        incidents.add((face[i], face[ccw(i)], face[cw(i)]))
-
-    return incidents
-
-  # we suppose a is a vertex
-  # TODO: add an assertion?
-  def __incident_faces_to_guard(self,a):
-    faces = []
-    for path in self.vertex(a).links:
-      for i in range(len(path)-1):
-        b = path[i]
-        c = path[i+1]
-        faces.append( (a, b, c) )
-    
-    return faces
-
-  def incident_faces(self,a):
-    """Returns all incident faces to vertex `i`."""
-    v = self.vertex(a)
-    if v.status == GUARD_VERTEX:
-      debug("  > incident faces of GUARD")
-      return self.__incident_faces_to_guard(a)
-    else:
-      debug("  > incident faces of ORDINARY")
-      return self.__incident_faces_to_ordinary(a)
-    
-  # the first vertex of each incident face is always vertex `a`
-  def __incident_face_to_ordinary(self,a):
-    all_around = [] # all faces incident to neighbor guards
-    for g in self.vertex(a).guards:
-      debug("  > Vertex %d has GUARD %d" % (a,g))
-      faces = self.__incident_faces_to_guard(g)
-      all_around.extend(faces)
-
-    # Filter `all_around` that have `a` as a vertex
-    for face in all_around:
-      if a in face:
-        i = face.index(a)
-        return (face[i], face[ccw(i)], face[cw(i)])
-
-    return None
-
-  # we suppose a is a vertex
-  # TODO: add an assertion?
-  def __incident_face_to_guard(self,a):
-    for path in self.vertex(a).links:
-      for i in range(len(path)-1):
-        b = path[i]
-        c = path[i+1]
-        return (a, b, c)
-    
-    return None
-
-  # return any face incident to vertex `a`, if it exists.  
-  def incident_face(self,a):
-    """Returns a single (any) incident face to vertex `i`."""
-    v = self.vertex(a)
-    if v.status == GUARD_VERTEX:
-      debug("  > incident faces of GUARD")
-      return self.__incident_face_to_guard(a)
-    else:
-      debug("  > incident faces of ORDINARY")
-      return self.__incident_face_to_ordinary(a)
 
   def insert_face(self, v0, v1, v2):
     """\
@@ -421,20 +371,18 @@ class GuardVertices:
     if status == UNGUARDED_FACE:
       # choose the NEW guard at random
       # TODO: soon, test greedy and other criteria.
-      i = v0#random.choice([v0,v1,v2])
+      i = random.choice([v0,v1,v2])
 
       # collect faces incident to guards of vertex `i`
       faces = self.incident_faces(i)
-      debug("  | incident faces:" + str(list(faces)))
 
       # we can only set its status at this moment,
       # after collecting its incident faces      
-      debug("Make vertex %d a GUARD." % i)
       self.vertex(i).set_status(GUARD_VERTEX)
+      self.vertex(i).guards.clear() # clear previous guard set
 
       # insert incident faces to `a` link set
       for f in faces:
-        debug("  | inserting face: (%d, %d, %d)" % (f[0], f[1], f[2]))
         self.__insert_face_into_guard(f[0], f[1], f[2])
 
       # vertex `i` is now a guard, clear its old guard set
@@ -447,7 +395,7 @@ class GuardVertices:
         if v.status == ORDINARY_VERTEX:
           v.guards.add(i)
     else:
-      debug("face already GUARDED!")
+      debug("Face already GUARDED, so no additional guard is needed.")
 
     self.__insert_face(v0, v1, v2)
     self.__insert_face(v1, v2, v0)
@@ -472,40 +420,10 @@ class GuardVertices:
       v0, v1, v2 : int, int, int
           The face vertices.
     """
-    debug("++ Updating link of vertex %d." % v0)
     if self.vertex(v0).status == ORDINARY_VERTEX:
       self.__insert_face_into_ordinary(v0,v1,v2)
-    else: # self.vertex(v0).status == GUARD_VERTEX:
+    else: # GUARD_VERTEX
       self.__insert_face_into_guard(v0,v1,v2)
-
-  # Here, `v0` MUST be ordinary
-  def __insert_face_into_ordinary(self, v0, v1, v2):
-    """\
-    Insert in-place face `(v0, v1, v2)` into the link of vertex `v0`.
-
-    This function implements the `extension` operation as described in the
-    page 11, fourth paragraph, of Blandford et al. (2005), as follows:
-       (i) add a new path to the link set, if neither of the two
-           vertices are in the set;
-      (ii) extend an existing path, if one vertex is in the link set;
-     (iii) join two existing paths, if the two vertices are in
-           separate paths;
-      (iv) join a path into a cycle, if the two vertices are the
-           ends of the same path.
-
-    Parameters
-    ----------
-      v0, v1, v2 : int, int, int
-          The face vertices.
-    """
-    debug("    | Updating link of ORDINARY vertex %d." % v0)
-    guards = self.vertex(v0).guards
-
-    if self.vertex(v1).status == GUARD_VERTEX:
-      guards.add(v1)
-
-    if self.vertex(v2).status == GUARD_VERTEX:
-      guards.add(v2)
 
   # Here, `v0` MUST be a guard
   def __insert_face_into_guard(self, v0, v1, v2):
@@ -527,7 +445,6 @@ class GuardVertices:
       v0, v1, v2 : int, int, int
           The face vertices.
     """
-    debug("    | Updating link of GUARD vertex %d." % v0)
     i1 = i2 = p1 = p2 = None
     links = self.vertex(v0).links
     # get the path of each neighbor, and its respective index
@@ -562,6 +479,35 @@ class GuardVertices:
           links[p1].append(v2)
         else:
           warning("Trying to insert face (%d, %d, %d) multiple times." % (v0, v1, v2))
+          warning("Nothing done.")
+
+  # Here, `v0` MUST be ordinary
+  def __insert_face_into_ordinary(self, v0, v1, v2):
+    """\
+    Insert in-place face `(v0, v1, v2)` into the link of vertex `v0`.
+
+    This function implements the `extension` operation as described in the
+    page 11, fourth paragraph, of Blandford et al. (2005), as follows:
+       (i) add a new path to the link set, if neither of the two
+           vertices are in the set;
+      (ii) extend an existing path, if one vertex is in the link set;
+     (iii) join two existing paths, if the two vertices are in
+           separate paths;
+      (iv) join a path into a cycle, if the two vertices are the
+           ends of the same path.
+
+    Parameters
+    ----------
+      v0, v1, v2 : int, int, int
+          The face vertices.
+    """
+    guards = self.vertex(v0).guards
+
+    if self.vertex(v1).status == GUARD_VERTEX:
+      guards.add(v1)
+
+    if self.vertex(v2).status == GUARD_VERTEX:
+      guards.add(v2)
 
   def remove_face(self, v0, v1, v2):
     """\
@@ -596,27 +542,6 @@ class GuardVertices:
     for i in ordinaries:
       self.__update_guard_set(f[i])
 
-  # v0 MUST be ordinary
-  def __update_guard_set(self, v0):
-    inactive = [] # we must remove any inactive guard
-    for g in self.vertex(v0).guards:
-      # this guard might be inactive, check it out
-      if self.vertex(g).status == GUARD_VERTEX:
-        debug("  > Vertex %d might have GUARD %d" % (v0,g))
-        guarding = False
-        for path in self.vertex(g).links:
-          if v0 in path:
-            guarding = True
-            break
-        
-        if not guarding:
-          inactive.append(g)
-      else:
-        inactive.append(g)
-
-    # remove all inactive guards
-    self.vertex(v0).guards.difference_update(set(inactive))
-    
   def __remove_face_from_guard(self, v0, v1, v2):
     """\
     Remove in-place face `(v0, v1, v2)` from the link set of vertex `v0`.
@@ -640,10 +565,10 @@ class GuardVertices:
         p2 = index
 
     # face must exist
-    assert (i1 is not None) and (i2 is not None), "Face does not exist"
+    assert (i1 is not None) and (i2 is not None), "Cannot remove missing face."
 
     # both neighbors must be in the same path
-    assert p1 == p2, "Face does not exist"
+    assert p1 == p2, "Cannot remove missing face."
 
     begin  = links[p1][0]
     end    = links[p1][-1]
@@ -669,6 +594,26 @@ class GuardVertices:
         self.vertex(v0).set_status(ORDINARY_VERTEX)
         self.vertex(v0).links.clear()
 
+  # v0 MUST be ordinary
+  def __update_guard_set(self, v0):
+    inactive = [] # we must remove any inactive guard
+    for g in self.vertex(v0).guards:
+      # this guard might be inactive, check it out
+      if self.vertex(g).status == GUARD_VERTEX:
+        guarding = False
+        for path in self.vertex(g).links:
+          if v0 in path:
+            guarding = True
+            break
+        
+        if not guarding:
+          inactive.append(g)
+      else:
+        inactive.append(g)
+
+    # remove all inactive guards
+    self.vertex(v0).guards.difference_update(set(inactive))
+
   # OUTPUT methods
 
   def print(self):
@@ -682,13 +627,26 @@ class GuardVertices:
     ----------
       empty : empty
     """
-    print('> Triangulation:')
+    print('Triangulation:')
     for i in range(self.number_of_vertices):
       if self.vertex(i).status == GUARD_VERTEX:
         print(self.vertex(i).links)
       else:
         print(list(self.vertex(i).guards))
-    print("> Number of vertices: ", self.number_of_vertices)
-    print("> Number of guards: ", self.number_of_guards)
-    print("> Number of ordinaries: ", self.number_of_ordinaries)
-    print("> Number of references: ", self.number_of_references)
+
+  def statistics(self):
+    """\
+    Writes to the standard output stream the link sets of all vertices.
+
+    The triangulation data structure is not supposed to have an undelying
+    geometry. So, it outputs only the connectivity.
+
+    Parameters
+    ----------
+      empty : empty
+    """
+    print('Statistics:')
+    print("  > Number of vertices: ", self.number_of_vertices)
+    print("  > Number of guards: ", self.number_of_guards)
+    print("  > Number of ordinaries: ", self.number_of_ordinaries)
+    print("  > Number of references: ", self.number_of_references)
