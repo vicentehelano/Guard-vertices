@@ -369,37 +369,43 @@ class GuardVertices:
              self.vertex(v2).status
     
     if status == UNGUARDED_FACE:
-      # choose the NEW guard at random
-      # TODO: soon, test greedy and other criteria.
-      i = random.choice([v0,v1,v2])
-
-      # collect faces incident to guards of vertex `i`
-      faces = self.incident_faces(i)
-
-      # we can only set its status at this moment,
-      # after collecting its incident faces      
-      self.vertex(i).set_status(GUARD_VERTEX)
-      self.vertex(i).guards.clear() # clear previous guard set
-
-      # insert incident faces to `a` link set
-      for f in faces:
-        self.__insert_face_into_guard(f[0], f[1], f[2])
-
-      # vertex `i` is now a guard, clear its old guard set
-      self.vertex(i).guards.clear()
-
-      # Now, add the new guard to its ordinary neighbors
-      neighbors = set(sum(self.vertex(i).links, []))
-      for n in neighbors:
-        v = self.vertex(n)
-        if v.status == ORDINARY_VERTEX:
-          v.guards.add(i)
+      self.__guard_face(v0, v1, v2)
     else:
       debug("Face already GUARDED, so no additional guard is needed.")
 
     self.__insert_face(v0, v1, v2)
     self.__insert_face(v1, v2, v0)
     self.__insert_face(v2, v0, v1)
+  
+  def __guard_face(self, v0, v1, v2):
+    # first, choose a guard
+    g  = self.__select_guard(v0, v1, v2)
+    vg = self.vertex(g)
+
+    # collect faces incident to vertex `g`
+    faces = self.incident_faces(g)
+
+    # we can only set its status at this moment,
+    # after collecting its incident faces.
+    vg.set_status(GUARD_VERTEX)
+    vg.guards.clear() # vertex `g` is now a guard, clear its old guard set
+
+    # insert incident faces to `g` link set
+    for f in faces:
+      print(f)
+      self.__insert_face_into_guard(f[0], f[1], f[2])
+
+    # Now, broadcast the new guard to its ordinary neighbors
+    neighbors = set(sum(vg.links, []))
+    for n in neighbors:
+      vn = self.vertex(n)
+      if vn.status == ORDINARY_VERTEX:
+        vn.guards.add(g)
+
+  def __select_guard(self, v0, v1, v2):
+    # choose the NEW guard at random
+    # TODO: soon, test greedy and other criteria.
+    return random.choice([v0,v1,v2])
 
   def __insert_face(self, v0, v1, v2):
     """\
