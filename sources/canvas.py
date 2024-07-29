@@ -64,7 +64,7 @@ class Canvas:
     plt.annotate(label, xy=p.coords)
   
   def draw_point(self, p):
-    plt.plot(p.x, p.y, 'ro', linewidth=3)
+    plt.plot(p.x, p.y, 'r.')
 
   def draw_segment(self, p, q):
     plt.plot([p.x, q.x], [p.y, q.y], 'r-', linewidth=3, zorder=3)
