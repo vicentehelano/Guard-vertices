@@ -19,8 +19,8 @@ CC0 1.0 Universal for more details.
 Author(s): Vicente Sobrinho <vicente.sobrinho@ufca.edu.br>
 """
 import numpy
+from numpy import random
 import copy
-import random
 from queue import Queue
 
 # Local imports

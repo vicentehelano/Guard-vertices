@@ -19,7 +19,7 @@ CC0 1.0 Universal for more details.
 Author(s): Vicente Sobrinho <vicente.sobrinho@ufca.edu.br>
 """
 import numpy
-import random
+from numpy import random
 
 # Import from local packages
 from .geometry import Point
