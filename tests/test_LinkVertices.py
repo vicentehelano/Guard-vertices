@@ -52,6 +52,7 @@ def testLinkVertices():
 
   print("BEFORE")
   t.print()
+  t.statistics()
 
   # remove algumas faces para testar
   # infinite faces
@@ -75,6 +76,7 @@ def testLinkVertices():
   t.remove_face(8,3,7)
   print("AFTER")
   t.print()
+  t.statistics()
 
 
 if __name__ == '__main__':
