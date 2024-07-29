@@ -18,44 +18,63 @@ CC0 1.0 Universal for more details.
 Author(s): Vicente Sobrinho <vicente.sobrinho@ufca.edu.br>
 """
 import numpy
-import random
 
 from .geometry import Point
 
 class Generator:
   """\
-  Random point set generator.
+  Synthetic point set generator.
 
-  Creates an object with methods to generate random point sets with a given
-  random number generator.
-  A single generator can generate points on the principal axes
-  (random_points_on_axes), points in a square (random_points_in_square), points
-  in a disc (random_points_in_disc) and points on a parabola
-  (random_points_on_parabola).
+  This class has methods to generate the following point sets:
+    - points uniformly distributed in the unit square [0,1)^2;
+    - points normally distributed in the unit square [0,1)^2;
+    - points distributed according to the Kuzmin distribution;
+    - points distributed along the line segment [0,1).
 
   Parameters
   ----------
-    rnd : random number generator (default: random.random)
+    seed : int (default: None)
+      A seed for the random number generator.
 
   Examples
   --------
   >>> generate = Generator()
-  >>> generate.random_points_on_axes(10)
+  >>> generate.uniform_distribution(10)
+
+  References
+  ----------
+    BLELLOCH, Guy E. et al. Design and implementation of a practical parallel
+      Delaunay algorithm. Algorithmica, v. 24, p. 243-269, 1999.
   """
-  def __init__(self, rnd = random.random):
+  def __init__(self, seed = None):
     """Initializes the Generator class."""
-    self.__random = rnd
+    self.__seed = seed
+    self.__random  = numpy.random.default_rng(seed)
 
+  @property
+  def seed(self):
+    """Returns a reference to the generator seed."""
+    return self.__seed
+  
+  @property
   def random(self):
-    """Random number generator."""
-    return self.__random()
+    """Returns a reference to the random number generator."""
+    return self.__random
 
-  def random_points_in_square(self, n):
+  def uniform(self):
+    """Draws random samples from a uniform distribution."""
+    return self.random.uniform()
+  
+  def normal(self):
+    """Draws random samples from a normal distribution."""
+    return self.random.normal()
+
+  def uniform_distribution(self, n):
     """\
-    Generate points in the unit square [0,1]^2.
+    Generate points uniformly in the unit square [0,1)^2.
 
     The algorithm draws floating points numbers for each coordinate in the
-    interval [0,1] using the underlying random point generator.
+    interval [0,1) using `numpy` uniform generator.
 
     Parameters
     ----------
@@ -69,52 +88,80 @@ class Generator:
     """
     points = []
     for i in range(n):
-      points.append(Point(self.random(), self.random()))
+      points.append(Point(self.uniform(), self.uniform()))
     return numpy.array(points)
-
-  def random_points_on_axes(self, n, sd = 1.0e-2):
+  
+  def normal_distribution(self, n):
     """\
-    Generate points around the principal axes.
+    Generate points normally in the unit square [0,1)^2.
 
-    Points are generated along the principal axes perturbed by a gaussian
-    noise with custom standard deviation `sd`.
+    The algorithm draws floating points numbers for each coordinate in the
+    interval [0,1) using `numpy` normal generator.
 
     Parameters
     ----------
-      n  : (int)
-        Number of points to be generated.
-      sd : (double)
-        Standard deviation for the gaussian noise.
+      n : (int)
+        The number of points to be generated.
 
     Returns
     --------
       points : numpy.array
         An array of random points.
     """
-    half = n // 2
     points = []
-
-    # Points around x-axis
-    for i in range(half):
-      x = self.random() + sd*self.random()
-      y = sd*self.random()
-      points.append(Point(x,y))
-
-    # Points around y-axis
-    for i in range(half, n):
-      x = sd*self.random()
-      y = self.random() + sd*self.random()
-      points.append(Point(x,y))
-
+    for i in range(n):
+      points.append(Point(self.normal(), self.normal()))
     return numpy.array(points)
 
-  def random_points_in_disc(self, n, sd = 1.0e-2):
-    """\
-    Generate points in the unit disc.
+  def __kuzmin_radius(self):
+    """Kuzmin radius generator."""
+    X = self.uniform()
+    return numpy.sqrt( (1.0/(1.0 - X))**2 - 1 )
 
-    Points are generated in the unit disc centered at (0,0) using polar
-    coordinates perturbed by a gaussian noise with custom standard
-    deviation `sd`.
+  def kuzmin_distribution(self, n):
+    """\
+    Generate points according to the Kuzmin distribution.
+
+    This is a normalized implementation of the Kuzmin distribution defined
+    by Blelloch et al. (1999).
+
+    Parameters
+    ----------
+      n : (int)
+        The number of points to be generated.
+
+    Returns
+    --------
+      points : numpy.array
+        An array of random points.
+
+    References
+    ----------
+      Blelloch, Guy E. et al. Design and implementation of a practical parallel
+        Delaunay algorithm. Algorithmica, v. 24, p. 243-269, 1999.
+    """
+    s = 0.0
+    points = []
+    while len(points) < n:
+      theta = 2 * numpy.pi * self.uniform()
+      r = self.__kuzmin_radius()
+      x = r * numpy.cos(theta)
+      y = r * numpy.sin(theta)
+      points.append(Point(x,y))
+      s = max(r, s) # inverse scale
+      
+    # apply scale so as to get points inside unit disk
+    for p in points:
+      p.set_coords(p.x/s, p.y/s)
+
+    return numpy.array(points)
+  
+  def line_distribution(self, n, b = 0.001):
+    """\
+    Generate points according to the Line distribution.
+
+    This is an implementation of the Line distribution defined in the paper
+    of Blelloch et al. (1999).
 
     Parameters
     ----------
@@ -130,57 +177,15 @@ class Generator:
 
     References
     ----------
-    Andreas Lundblad, How to generate a random point within a circle of radius R, 2018.
-    URL: https://stackoverflow.com/questions/5837572/generate-a-random-point-within-a-circle-uniformly/50746409#50746409
+      Blelloch, Guy E. et al. Design and implementation of a practical parallel
+        Delaunay algorithm. Algorithmica, v. 24, p. 243-269, 1999.
     """
-    R = 1.0 # radius
     points = []
     for i in range(n):
-      theta = 2 * numpy.pi * self.random()
-      r = R * numpy.sqrt(self.random())
-      x = r * numpy.cos(theta)
-      y = r * numpy.sin(theta)
-
-      # add gaussian noise with standard deviation `sd`
-      x = x + sd * self.random()
-      y = y + sd * self.random()
-
+      u = self.uniform()
+      v = self.uniform()
+      x = u
+      y = b/(v - b*v + b)
       points.append(Point(x,y))
-
-    return numpy.array(points)
-
-  def random_points_on_parabola(self, n, sd = 1.0e-2):
-    """\
-    Generate points around a parabola.
-
-    Points are generated around a parabola as cut of the 3D paraboloid.
-    We use polar coordinates and gaussian noise with standard deviation `sd`,
-    as in the disc generator.
-
-    Parameters
-    ----------
-      n  : (int)
-        Number of points to be generated.
-      sd : (double)
-        Standard deviation for the gaussian noise.
-
-    Returns
-    --------
-      points : numpy.array
-        An array of random points.
-    """
-    R = 1.0 # radius
-    points = []
-    for i in range(n):
-      theta = 2 * numpy.pi * self.random()
-      r = R * numpy.sqrt(self.random())
-      x = r * numpy.cos(theta)
-      y = x**2
-
-      # add gaussian noise with standard deviation `sd`
-      x = x + sd * self.random()
-      y = y + sd * self.random()
-
-      points.append(Point(x,y))
-
+      
     return numpy.array(points)

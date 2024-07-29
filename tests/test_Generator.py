@@ -22,12 +22,15 @@ import matplotlib.pyplot as plt
 from sources.canvas import Canvas
 from sources.geometry import BoundingBox
 from sources.generators import *
+from sources.log import *
 
 def testGenerator():
   n = int(input("Enter the desired number of points: "))
 
   generate = Generator()
-  points = generate.random_points_on_axes(n)
+
+  info("Uniform distribution.")
+  points = generate.uniform_distribution(n)
   bbox = BoundingBox()
   bbox.expand(points)
   bbox.scale(1.25)
@@ -39,7 +42,8 @@ def testGenerator():
   canvas.end()
   canvas.close()
 
-  points = generate.random_points_in_square(n)
+  info("Normal distribution.")
+  points = generate.normal_distribution(n)
   bbox = BoundingBox()
   bbox.expand(points)
   bbox.scale(1.25)
@@ -51,7 +55,8 @@ def testGenerator():
   canvas.end()
   canvas.close()
 
-  points = generate.random_points_in_disc(n)
+  info("Kuzmin distribution.")
+  points = generate.kuzmin_distribution(n)
   bbox = BoundingBox()
   bbox.expand(points)
   bbox.scale(1.25)
@@ -63,7 +68,8 @@ def testGenerator():
   canvas.end()
   canvas.close()
 
-  points = generate.random_points_on_parabola(n)
+  info("Line distribution.")
+  points = generate.line_distribution(n)
   bbox = BoundingBox()
   bbox.expand(points)
   bbox.scale(1.25)
