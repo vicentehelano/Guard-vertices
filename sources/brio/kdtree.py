@@ -2,7 +2,7 @@
 """\
 This is file `kdtree.py'.
 
-Implementation of a BRIO using a kD-tree with ropes.
+Implementation of a BRIO using kD-trees.
 
 Copyright (C) 2024 any individual authors listed elsewhere in this file.
 
@@ -30,28 +30,9 @@ from ..log import *
 X_AXIS = 0
 Y_AXIS = 1
 
-# Temporarily, we have only implemented NONE and RANDOM.
 class Node:
   """\
-  Constructs a Biased Randomized Insertion Order (BRIO).
-
-  Currently available BRIOS: None and random shuffle.
-
-  Parameters
-  ----------
-    points : random access container (list or numpy.array)
-        Container of 2D points.
-
-  Returns
-  --------
-    P : numpy.array
-        Container of sorted points.
-
-  References
-  ----------
-    Amenta, N., Choi, S., and Rote, G., Incremental constructions con BRIO.
-      Proceedings of the 19th Annual Symposium on Computational geometry,
-      p. 211-219, 2003.
+  Kd-tree node class.
   """
   def __init__(self):
     self.__id    = None
@@ -94,6 +75,18 @@ class Node:
     self.__bbox.set_max(xmax, ymax)
 
 class KdTree:
+  """\
+  A 2D kD-tree class.
+
+  This class implements a 2D kD-tree following the design of Liu et al. (2013),
+  where points area stored in both internal and external nodes.
+
+  References
+  ----------
+    LIU, Jian-Fei; YAN, Jin-Hui; LO, S. H. A new insertion sequence for
+      incremental Delaunay triangulation. Acta Mechanica Sinica, v. 29,
+      n. 1, p. 99-109, 2013.
+  """
   def __init__(self):
     self.__nodes  = []
     self.__points = None

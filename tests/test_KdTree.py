@@ -47,8 +47,8 @@ def testKdTree():
 
   tree = KdTree()
   tree.insert(points)
-
   tree.draw()
+  tree.statistics()
 
 if __name__ == '__main__':
   testKdTree()
