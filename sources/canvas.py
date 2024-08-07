@@ -19,7 +19,7 @@ Author(s): Vicente Sobrinho <vicente.sobrinho@ufca.edu.br>
 """
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, Rectangle
 import seaborn as sns
 sns.set_theme(style="darkgrid")
 
@@ -77,3 +77,15 @@ class Canvas:
       plt.fill(x, y, 'b', facecolor='magenta', edgecolor='none', alpha=0.2, zorder=1)
     else:
       plt.fill(x, y, 'b', facecolor='none', edgecolor='blue', linewidth=1.5, zorder=2)
+
+  def draw_rectangle(self, rectangles):
+    patches = []
+    for r in rectangles:
+      width  = r.max.x - r.min.x
+      height = r.max.y - r.min.y
+      r = Rectangle(r.min.coords, width, height)
+      patches.append(r)
+
+    collection = PatchCollection(patches, edgecolor='magenta', facecolor='none', linewidth=2)
+    ax = plt.gca()
+    ax.add_collection(collection)
