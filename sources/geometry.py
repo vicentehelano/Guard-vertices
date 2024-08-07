@@ -46,6 +46,9 @@ class Point:
     self.__x = numpy.float64(x)
     self.__y = numpy.float64(y)
 
+  def __repr__(self):
+    return f"Point({self.__x}, {self.__y})"
+
   @property
   def x(self):
     """Returns its abscissa."""
@@ -108,10 +111,29 @@ class BoundingBox:
 
   This class provides methods to get and set bounding box properties.
   """
-  def __init__(self):
+  def __init__(self, xmin=-numpy.inf, ymin=-numpy.inf,
+                     xmax=numpy.inf, ymax=numpy.inf):
     """Constructs a bounding box, initially, unbounded."""
-    self.__min = Point( numpy.inf,  numpy.inf)
-    self.__max = Point(-numpy.inf, -numpy.inf)
+    self.__min = Point(xmin, ymin)
+    self.__max = Point(xmax, ymax)
+
+  def __repr__(self):
+    return f"BoundingBox(min.x={self.min.x}, min.y={self.min.y}, " \
+                        f"max.x={self.max.x}, max.y={self.max.y})"
+
+  def fit(self, points):
+    """Fit the bounding box to the given point set."""
+    xmin = xmax = points[0].x
+    ymin = ymax = points[0].y
+    for p in points[1:]:
+      xmin = min(p.x, xmin)
+      ymin = min(p.y, ymin)
+
+      xmax = max(p.x, xmax)
+      ymax = max(p.y, ymax)
+
+    self.__min = Point(xmin, ymin)
+    self.__max = Point(xmax, ymax)
 
   def expand(self, points):
     """Expand the bounding box so as to contain the given point set."""
@@ -159,6 +181,14 @@ class BoundingBox:
   def max(self):
     """Returns the bounding box upper-right corner."""
     return self.__max
+  
+  def set_min(self, x, y):
+    """Sets the bounding box lower-left corner."""
+    self.__min = Point(x,y)
+  
+  def set_max(self, x, y):
+    """Sets the bounding box upper-right corner."""
+    self.__max = Point(x,y)
       
 def __det2(a00, a01, a10, a11):
   """Returns the determinant of a 2x2 matrix."""
