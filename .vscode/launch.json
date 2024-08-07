@@ -29,6 +29,18 @@
             "module": "tests.test_Generator"
         },
         {
+            "name": "Test: KdTree",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "tests.test_KdTree"
+        },
+        {
+            "name": "Test: Brio",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "tests.test_Brio"
+        },
+        {
             "name": "Example: DelaunayTriangulation",
             "type": "debugpy",
             "request": "launch",

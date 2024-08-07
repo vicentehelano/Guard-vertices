@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """\
-This is file `brio.py'.
+This is file `__init__.py'.
 
 Implementation of Biased Randomized Insertion Orders.
 
@@ -23,7 +23,8 @@ import sys
 from enum import Enum
 
 # Local imports
-from .log import *
+from .kdtree import *
+from ..log import *
 
 # Sorting methods
 BRIO_NONE    = 0
@@ -72,5 +73,8 @@ class Brio:
     if self.__method == BRIO_RANDOM:
       numpy.random.shuffle(P)
       return P
+    if self.__method == BRIO_KDTREE:
+      tree = KdTree()
+      return tree.sort(P)
     
     return None
