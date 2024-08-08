@@ -27,7 +27,7 @@ from sources.generators import *
 from sources.brio.kdtree import KdTree, Node
 
 def testKdTree():
-  generate = Generator()
+  generate = Generator(1234567890)
   points = generate.uniform_distribution(64)
   xpoints = [Point(2.880, -64.490),
     Point(22.320, -56.810),
@@ -46,7 +46,7 @@ def testKdTree():
     Point(199.680, -18.770)]
 
   tree = KdTree()
-  tree.insert(points)
+  tree.sort(points)
   tree.draw()
   tree.statistics()
 

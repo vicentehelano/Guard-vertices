@@ -45,6 +45,7 @@ class Point:
     """Constructs a Point from its coordinates."""
     self.__x = numpy.float64(x)
     self.__y = numpy.float64(y)
+    self.__id = None
 
   def __repr__(self):
     return f"Point({self.__x}, {self.__y})"
@@ -76,6 +77,10 @@ class Point:
   def set_y(self, y):
     """Set the point ordinate."""
     self.__y = y
+
+  def set_id(self, id):
+    """Set the point identification number."""
+    self.__id = id
 
 class Circle:
   """\

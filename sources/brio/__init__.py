@@ -57,24 +57,56 @@ class Brio:
   """
   def __init__(self, method = BRIO_RANDOM):
     self.__method = method
+    self.__points = None
+    self.__rounds = None
 
   def __call__(self, points):
-    P = None
+    # copy input point set
+    self.__points = None
     if isinstance(points, numpy.ndarray):
-      P = copy.deepcopy(points)
+      self.__points = copy.deepcopy(points)
     elif isinstance(points, list):
-      P = numpy.array(points)
+      self.__points = numpy.array(points)
     else:
       error("Input container not supported.")
       sys.exit(1)
 
-    if self.__method == BRIO_NONE:
-      return P
+    # set the chosen brio order
     if self.__method == BRIO_RANDOM:
-      numpy.random.shuffle(P)
-      return P
-    if self.__method == BRIO_KDTREE:
-      tree = KdTree()
-      return tree.sort(P)
+      self.__brio_random()
+    elif self.__method == BRIO_KDTREE:
+      self.__brio_kdtree()
+    else:
+      assert self.__method == BRIO_NONE
     
-    return None
+    return self.__points
+  
+  def __create_rounds(self):
+    """Computes round intervals."""
+    n = len(self.__points) # number of points
+    r = int(numpy.floor(numpy.log2(n))) # number of rounds
+    sizes = numpy.zeros((r,), dtype=int) # size of each round
+    for i in range(r-1, 0, -1):
+      k = sum(random.binomial(1, 0.5, n))
+      sizes[i] = k
+      n = n - k
+    sizes[0] = n
+
+    # compute round ranges
+    self.__rounds = numpy.zeros((r,), dtype=tuple)
+    left = 0
+    for i, size in enumerate(sizes):
+      right = left + size
+      self.__rounds[i] = (left,right)
+      left = right
+
+  def __brio_random(self):
+    random.shuffle(self.__points)
+  
+  def __brio_kdtree(self):
+    # create rounds
+    self.__create_rounds()
+
+    for r in self.__rounds:
+      tree = KdTree()
+      #tree.sort(self.__points)
