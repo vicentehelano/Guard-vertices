@@ -34,6 +34,10 @@ GUARD_VERTEX    = 1
 UNGUARDED_FACE = 0
 GUARDED_FACE   = 1
 
+# Guarding policy
+RANDOM_POLICY = 0
+GREEDY_POLICY = 1
+
 class Vertex:
   """\
   Vertex base class for the guard-based data structure of Batista (2010).
@@ -401,10 +405,26 @@ class GuardVertices:
       if vn.status == ORDINARY_VERTEX:
         vn.guards.add(g)
 
-  def __select_guard(self, v0, v1, v2):
+  def degree(self, v0):
+    k = 0
+    for path in self.vertex(v0).links:
+      k = k + len(path) - 1
+
+    return k
+
+  def __select_guard(self, v0, v1, v2, policy = GREEDY_POLICY):
     # choose the NEW guard at random
     # TODO: soon, test greedy and other criteria.
+    if policy == GREEDY_POLICY:
+      d0 = self.degree(v0)
+      d1 = self.degree(v1)
+      d2 = self.degree(v2)
+      i = numpy.argmax([d0, d1, d2])
+      v = [v0, v1, v2]
+      return v[i]
+
     return random.choice([v0,v1,v2])
+
 
   def __insert_face(self, v0, v1, v2):
     """\
