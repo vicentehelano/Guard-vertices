@@ -256,16 +256,11 @@ class KdTree:
     self.__sort_inorder_right_first(node.child(1), buffer)
     buffer.append(node.point)
     self.__sort_inorder_right_first(node.child(0), buffer)
-  
+
   def __sort_inorder_alternating(self, node, buffer):
     if node is None:
       return
-    
-    print("Axis: ", node.axis)
-      #bbox = node.child(0).bbox
-      #longest0 = self.__longest_axis(bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y)
-      #bbox = node.child(1).bbox
-      #longest1 = self.__longest_axis(bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y)
+
     if node.axis == X_AXIS:
       self.__sort_inorder_left_first(node.child(0), buffer)
       buffer.append(node.point)
