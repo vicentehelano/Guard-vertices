@@ -23,6 +23,7 @@ from sources.geometry import Point
 from sources.links import LinkVertices
 from sources.guards import GuardVertices
 from sources.delaunay import DelaunayTriangulation
+from sources.generators import *
 
 def exampleBlandford():
   points = [ Point(0.0, 1.0),
@@ -40,7 +41,11 @@ def testDelaunayTriangulation():
   # Choose the data structure you want
   Dt = DelaunayTriangulation(GuardVertices)
   #Dt = DelaunayTriangulation(LinkVertices)
-  points = exampleBlandford()
+
+  generate = Generator(1234567890)
+  points = generate.uniform_distribution(1000)
+  #points = exampleBlandford()
+
   Dt.insert(points)
   Dt.statistics()
   Dt.draw()

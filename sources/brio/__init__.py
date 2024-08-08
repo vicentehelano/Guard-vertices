@@ -29,8 +29,7 @@ from ..log import *
 # Sorting methods
 BRIO_NONE    = 0
 BRIO_RANDOM  = 1
-BRIO_HILBERT = 2
-BRIO_KDTREE  = 3
+BRIO_KDTREE  = 2
 
 # Temporarily, we have only implemented NONE and RANDOM.
 class Brio:
@@ -109,4 +108,8 @@ class Brio:
 
     for r in self.__rounds:
       tree = KdTree()
-      #tree.sort(self.__points)
+      if r[1]-r[0] > 1:
+        block = tree.sort(self.__points[r[0]:r[1]])
+        self.__points[r[0]:r[1]] = block[:]
+
+    return self.__points

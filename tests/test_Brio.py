@@ -25,12 +25,12 @@ from sources.generators import *
 #from sources.brio.kdtree import KdTree, Node
 #from sources.log import *
 from sources.brio import Brio
-from sources.brio import BRIO_KDTREE, BRIO_HILBERT, BRIO_NONE, BRIO_RANDOM
+from sources.brio import BRIO_NONE, BRIO_RANDOM, BRIO_KDTREE
 
 def testBrio():
-  generate = Generator()
-  points = generate.uniform_distribution(64)
-  xpoints = [Point(2.880, -64.490),
+  #generate = Generator()
+  #points = generate.uniform_distribution(1000)
+  points = [Point(2.880, -64.490),
     Point(22.320, -56.810),
     Point(38.640, -64.730),
     Point(47.520, -50.090),

@@ -24,7 +24,7 @@ import copy
 from queue import Queue
 
 # Local imports
-from .brio import Brio
+from .brio import Brio, BRIO_NONE, BRIO_RANDOM, BRIO_KDTREE
 from .canvas import Canvas
 from .geometry import Point, Circle, BoundingBox
 from .geometry import orientation, in_between, circumcircle
@@ -140,9 +140,16 @@ class DelaunayTriangulation:
     assert len(points) >= 3
 
     info('Creating BRIO...')
-    brio = Brio()
+    brio = Brio(BRIO_KDTREE)
     points = brio(points)
     info('BRIO done.')
+
+    # reshaping bounding box
+    debug("Updating bounding box.")
+    if self.number_of_vertices == 1:
+      self.__bbox.fit(points)
+    else:
+      self.__bbox.expand(points)
 
     info('Inserting first three points...')
     self.__insert_first_three(points)
@@ -169,10 +176,6 @@ class DelaunayTriangulation:
 
     info('Insertion done.')
 
-    # reshaping bounding box
-    debug("Updating bounding box.")
-    self.__bbox.expand(points)
-
   def visual_insert(self, points, with_labels=False):
     """\
     Insert points into a 2D Delaunay triangulation with visual debugging.
@@ -198,7 +201,10 @@ class DelaunayTriangulation:
 
     # reshaping bounding box
     info("Updating bounding box.")
-    self.__bbox.expand(points)
+    if self.number_of_vertices == 1:
+      self.__bbox.fit(points)
+    else:
+      self.__bbox.expand(points)
 
     if self.__canvas is None:
       info("Creating canvas...")
@@ -208,7 +214,7 @@ class DelaunayTriangulation:
       info("Canvas ready.")
 
     info('Creating BRIO...')
-    brio = Brio()
+    brio = Brio(BRIO_KDTREE)
     points = brio(points)
     info('BRIO done.')
 
