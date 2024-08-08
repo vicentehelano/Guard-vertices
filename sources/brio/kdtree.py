@@ -272,6 +272,23 @@ class KdTree:
       buffer.append(node.point)
       self.__sort_inorder_left_first(node.child(1), buffer)
 
+  def __sort_inorder_alternating2(self, node, buffer, swap = 0):
+    if node is None:
+      return
+    
+    if swap == 0:
+      self.__sort_inorder_alternating2(node.child(0), buffer, swap)
+      buffer.append(node.point)
+      aux = []
+      self.__sort_inorder_alternating2(node.child(1), aux, swap)
+      buffer.extend(reversed(aux))
+    else:
+      self.__sort_inorder_alternating2(node.child(1), aux, swap)
+      buffer.append(node.point)
+      aux = []
+      self.__sort_inorder_alternating2(node.child(0), aux, swap)
+      buffer.extend(reversed(aux))
+
   def __sort_inorder(self, node, buffer):
     if node is None:
       return
@@ -305,7 +322,8 @@ class KdTree:
     buffer = []
     #self.__sort_breadth_first(self.root, buffer)
     #self.__sort_inorder(self.root, buffer)
-    self.__sort_inorder_alternating(self.root, buffer)
+    #self.__sort_inorder_alternating(self.root, buffer)
+    self.__sort_inorder_alternating2(self.root, buffer)
     self.__points = numpy.array(buffer)
 
     return self.__points
@@ -332,10 +350,11 @@ class KdTree:
     self.__canvas.draw_rectangle(rectangles)
     for p in self.points:
       self.__canvas.draw_point(p)
-    for i in range(len(self.points)-1):
-      p = self.points[i]
-      q = self.points[i+1]
-      self.__canvas.draw_segment(p, q)
+      
+    #for i in range(len(self.points)-1):
+    #  p = self.points[i]
+    #  q = self.points[i+1]
+    #  self.__canvas.draw_segment(p, q)
     self.__canvas.end()
 
   def statistics(self):

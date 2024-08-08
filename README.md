@@ -5,7 +5,7 @@ This repository contains Python implementations of the following data structures
 1. `guard-vertices` (Batista, 2010)
 2. `link-vertices` (Blandford et al., 2005)
 
-Soon, we will implement the traditional face-based data structure used by CGAL and do a thorough experimental evaluation of them all.
+Soon, a thorough experimental evaluation will be carried out.
 
 ## References
 
