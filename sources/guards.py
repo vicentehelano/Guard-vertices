@@ -614,8 +614,8 @@ class GuardVertices:
         links.insert(p1+1,latest)
 
     # If link set is empty, make it ordinary (except, for the infinite vertex)
-    if not self.is_infinite(v0):
-      if len(links) == 0:
+    if len(links) == 0:
+      if not self.is_infinite(v0):
         self.vertex(v0).set_status(ORDINARY_VERTEX)
         self.vertex(v0).links.clear()
 
