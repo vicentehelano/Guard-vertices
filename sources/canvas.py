@@ -66,8 +66,8 @@ class Canvas:
   def draw_point(self, p):
     plt.plot(p.x, p.y, 'r.')
 
-  def draw_segment(self, p, q):
-    plt.plot([p.x, q.x], [p.y, q.y], 'r-', linewidth=3, zorder=3)
+  def draw_segment(self, p, q, style='r-'):
+    plt.plot([p.x, q.x], [p.y, q.y], style, linewidth=2, zorder=1)
 
   def draw_triangle(self, p, q, r, filled=False):
     x = [p.x, q.x, r.x]

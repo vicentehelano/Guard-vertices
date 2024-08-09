@@ -351,10 +351,11 @@ class KdTree:
     for p in self.points:
       self.__canvas.draw_point(p)
       
-    #for i in range(len(self.points)-1):
-    #  p = self.points[i]
-    #  q = self.points[i+1]
-    #  self.__canvas.draw_segment(p, q)
+    # SORTING CURVE
+    for i in range(len(self.points)-1):
+      p = self.points[i]
+      q = self.points[i+1]      
+      self.__canvas.draw_segment(p, q)
     self.__canvas.end()
 
   def statistics(self):

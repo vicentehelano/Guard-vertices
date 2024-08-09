@@ -20,10 +20,13 @@ Author(s): Vicente Sobrinho <vicente.sobrinho@ufca.edu.br>
 import numpy
 import copy
 import sys
+from random import sample
 from enum import Enum
 
 # Local imports
 from .kdtree import *
+from ..geometry import BoundingBox, Point
+from ..canvas import Canvas
 from ..log import *
 
 # Sorting methods
@@ -58,6 +61,10 @@ class Brio:
     self.__method = method
     self.__points = None
     self.__rounds = None
+    self.__canvas = None
+
+  def rounds(self):
+    return self.__rounds
 
   def __call__(self, points):
     # copy input point set
@@ -113,3 +120,26 @@ class Brio:
         self.__points[r[0]:r[1]] = block[:]
 
     return self.__points
+  
+  def draw(self):
+    """Draw circumcircles over the current active canvas."""
+    if self.__canvas is None:
+      bbox = BoundingBox()
+      bbox.fit(self.__points)
+      bbox.scale(1.25)
+      self.__canvas = Canvas(bbox)
+      
+    # SORTING CURVE
+    import matplotlib.colors as pltc
+    all_colors = [k for k,v in pltc.cnames.items()]
+    colors = sample(all_colors, len(self.__rounds))
+
+    for i, r in enumerate(self.__rounds):
+      self.__canvas.begin()
+      for j in range(r[0], r[1]-1):
+        p = self.__points[j]
+        q = self.__points[j+1]      
+        self.__canvas.draw_segment(p, q, colors[i])
+      for p in self.__points:
+        self.__canvas.draw_point(p)
+      self.__canvas.end()
