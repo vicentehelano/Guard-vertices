@@ -50,6 +50,5 @@ def testBrio():
   brio(points)
   brio.draw()
 
-
 if __name__ == '__main__':
   testBrio()
