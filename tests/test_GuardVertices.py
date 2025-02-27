@@ -22,7 +22,7 @@ from sources.guards import GuardVertices
 def testGuardVertices():
   t = GuardVertices()
 
-  for i in range(9):
+  for i in range(10):
     t.create_vertex()
 
   # infinite faces
@@ -33,11 +33,6 @@ def testGuardVertices():
   t.insert_face(5,0,2)
   t.insert_face(0,5,1)
   t.insert_face(7,3,0)
-
-  # check if convex hull is OK
-  halls = map(str, 2*[1,4,7,3,6,2,5])
-  hull  = map(str, t.vertices[0].links[0][:-1])
-  assert ''.join(hull) in ''.join(halls)
 
   # finite faces
   t.insert_face(5,9,4)

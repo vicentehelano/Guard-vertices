@@ -101,8 +101,6 @@ class LinkVertices:
   def __init__(self):
     """Initializes the LinkVertices class."""
     self.__vertices = []
-    self.create_vertex() # infinite vertex, index 0
-    self.__vertices[0].set_point( Point(numpy.inf,numpy.inf) )
 
   # ACCESS methods
 
@@ -195,18 +193,6 @@ class LinkVertices:
         faces.append( (a, b, c) )
     
     return faces
-    
-  # QUERY methods
-    
-  def is_infinite(self, v0, v1 = None, v2 = None):
-    """Returns True, if any vertex in {v0,v1,v2} is infinite."""
-    if v2 is None:
-      if v1 is None:
-        return v0 == 0
-      else:
-        return  (v0 == 0) or (v1 == 0)
-    else:
-      return  (v0 == 0) or (v1 == 0) or (v2 == 0)
 
   # UPDATE methods
 

@@ -22,7 +22,7 @@ from sources.links import LinkVertices
 def testLinkVertices():
   t = LinkVertices()
 
-  for i in range(9):
+  for i in range(10):
     t.create_vertex()
 
   # infinite faces

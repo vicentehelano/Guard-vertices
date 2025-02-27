@@ -67,6 +67,10 @@ class DelaunayTriangulation:
     self.__bbox = BoundingBox() # triangulation bounding box
     self.__canvas = None # used when drawing
 
+    # Create infinite vertex at index 0
+    self.__create_vertex()
+    self.vertex(0).set_point( Point(numpy.inf,numpy.inf) )
+
   # ACCESS methods
 
   def vertex(self, i):
@@ -90,7 +94,13 @@ class DelaunayTriangulation:
 
   def __is_infinite(self, v0, v1 = None, v2 = None):
     """Returns True, if any vertex in {v0,v1,v2} is infinite. Otherwise, returns False."""
-    return self.__tds.is_infinite(v0, v1, v2)
+    if v2 is None:
+      if v1 is None:
+        return v0 == 0
+      else:
+        return  (v0 == 0) or (v1 == 0)
+    else:
+      return  (v0 == 0) or (v1 == 0) or (v2 == 0)
 
   def __all_infinite(self, faces):
     """Returns True, if all face in `faces` is infinite. Otherwise, returns False."""

@@ -26,8 +26,8 @@ def exampleBlandford():
 
 def exampleDelaunayTriangulation():
   # Choose the data scructure you want
-  Dt = DelaunayTriangulation(GuardVertices)
-  #Dt = DelaunayTriangulation(LinkVertices)
+  #Dt = DelaunayTriangulation(GuardVertices)
+  Dt = DelaunayTriangulation(LinkVertices)
   points = exampleBlandford()
   Dt.visual_insert(points, with_labels=True)
 

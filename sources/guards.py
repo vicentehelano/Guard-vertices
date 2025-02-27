@@ -68,7 +68,7 @@ class Vertex:
   def links(self):
     """Returns a reference to the link set."""
     return self.__links
-  
+
   @property
   def guards(self):
     """Returns a reference to the guard set."""
@@ -78,7 +78,7 @@ class Vertex:
   def point(self):
     """Returns a reference to underlying point."""
     return self.__point
-  
+
   @property
   def status(self):
     """Returns the type of the vertex."""
@@ -130,9 +130,6 @@ class GuardVertices:
   def __init__(self):
     """Initializes the GuardVertices class."""
     self.__vertices = []
-    self.create_vertex() # infinite vertex, index 0
-    self.__vertices[0].set_point( Point(numpy.inf,numpy.inf) )
-    self.__vertices[0].set_status(GUARD_VERTEX)
 
   # ACCESS methods
 
@@ -147,12 +144,12 @@ class GuardVertices:
   
   @property
   def number_of_vertices(self): # number of vertices
-    """Returns the total number of vertices, including the infinite one."""
+    """Returns the total number of vertices."""
     return len(self.__vertices)
   
   @property
   def number_of_guards(self): # number of guards
-    """Returns the total number of guard-vertices, including the infinite one."""
+    """Returns the total number of guard-vertices."""
     return sum(1 for v in self.vertices if v.status == GUARD_VERTEX)
   
   @property
@@ -166,7 +163,7 @@ class GuardVertices:
     references  = sum(len(sum(v.links, [])) for v in self.vertices if v.status == GUARD_VERTEX)
     references += sum(len(v.guards) for v in self.vertices if v.status == ORDINARY_VERTEX)
     return references
-    
+
   def neighbor(self, i, f):
     """Returns the neighbor face opposite to the i-th vertex of `f`."""
     return self.__find_up(f[cw(i)], f[ccw(i)])
@@ -326,18 +323,6 @@ class GuardVertices:
         incidents.add((face[i], face[ccw(i)], face[cw(i)]))
 
     return incidents
-
-  # QUERY methods
-    
-  def is_infinite(self, v0, v1 = None, v2 = None):
-    """Returns True, if any vertex in {v0,v1,v2} is infinite."""
-    if v2 is None:
-      if v1 is None:
-        return v0 == 0
-      else:
-        return  (v0 == 0) or (v1 == 0)
-    else:
-      return  (v0 == 0) or (v1 == 0) or (v2 == 0)
 
   # UPDATE methods
 
@@ -613,11 +598,10 @@ class GuardVertices:
       if len(latest) > 1:
         links.insert(p1+1,latest)
 
-    # If link set is empty, make it ordinary (except, for the infinite vertex)
+    # If link set is empty, make it ordinary.
     if len(links) == 0:
-      if not self.is_infinite(v0):
-        self.vertex(v0).set_status(ORDINARY_VERTEX)
-        self.vertex(v0).links.clear()
+      self.vertex(v0).set_status(ORDINARY_VERTEX)
+      self.vertex(v0).links.clear()
 
   # v0 MUST be ordinary
   def __update_guard_set(self, v0):
