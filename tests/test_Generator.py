@@ -32,7 +32,7 @@ def testGenerator():
   info("Uniform distribution.")
   points = generate.uniform_distribution(n)
   bbox = BoundingBox()
-  bbox.expand(points)
+  bbox.fit(points)
   bbox.scale(1.25)
   canvas = Canvas(bbox)
 
@@ -45,7 +45,7 @@ def testGenerator():
   info("Normal distribution.")
   points = generate.normal_distribution(n)
   bbox = BoundingBox()
-  bbox.expand(points)
+  bbox.fit(points)
   bbox.scale(1.25)
   canvas = Canvas(bbox)
 
@@ -58,7 +58,7 @@ def testGenerator():
   info("Kuzmin distribution.")
   points = generate.kuzmin_distribution(n)
   bbox = BoundingBox()
-  bbox.expand(points)
+  bbox.fit(points)
   bbox.scale(1.25)
   canvas = Canvas(bbox)
 
@@ -71,7 +71,7 @@ def testGenerator():
   info("Line distribution.")
   points = generate.line_distribution(n)
   bbox = BoundingBox()
-  bbox.expand(points)
+  bbox.fit(points)
   bbox.scale(1.25)
   canvas = Canvas(bbox)
 
